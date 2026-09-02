@@ -1,3 +1,4 @@
+import path from "path";
 import type { NextConfig } from "next";
 import withSerwistInit from "@serwist/next";
 
@@ -9,7 +10,9 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  turbopack: {},
+  turbopack: {
+    root: path.resolve(__dirname, "../../"),
+  },
 };
 
 export default withSerwist(nextConfig);

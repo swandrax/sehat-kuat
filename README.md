@@ -93,7 +93,7 @@ graph TB
 ```text
 SEHAT-KUAT/
 ├── apps/
-│   ├── api/                       # NestJS API Backend
+│   ├── api/                       # NestJS API Backend (:4000)
 │   │   ├── src/
 │   │   │   ├── auth/              # Argon2id Authentication & RBAC
 │   │   │   ├── users/             # User Management & Geolocation Sync
@@ -111,7 +111,7 @@ SEHAT-KUAT/
 │   │   │   ├── common/            # Interceptors, Filters & Events
 │   │   │   └── ai/                # AI Consultation & Telemetry
 │   │   └── package.json
-│   └── web/                       # Next.js 16 PWA Frontend
+│   └── web/                       # Next.js 16 PWA Frontend (:3000)
 │       ├── src/
 │       │   ├── app/               # App Router Pages (/doctors, /chat, /doctor/consultations/[id], etc.)
 │       │   ├── hooks/             # SSE Streaming Hooks (useQueueStream, useNotificationStream)
@@ -131,44 +131,66 @@ SEHAT-KUAT/
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Step-by-Step Running Guide
 
-### 1. Prerequisites
-* Node.js >= 20
-* Neon PostgreSQL Database
-* Docker & Docker Compose (Optional for cluster mode)
-
-### 2. Environment Setup
-Create `.env` file in the root directory:
+### 1. Inisialisasi Lingkungan (.env)
+Pastikan file `.env` di root terkonfigurasi dengan URL database Neon PostgreSQL:
 ```bash
 cp .env.example .env
 ```
 
-### 3. Database Migration & Seeding
-```bash
-# Push schema to Neon PostgreSQL
-npx prisma db push
+### 2. Sinkronisasi Database Neon & Seeding Data
+Jalankan perintah berikut langsung dari root direktori:
+```powershell
+# 1. Generate Prisma Client
+npm run prisma:generate
 
-# Seed initial medical data
-npx tsx prisma/seed.ts
+# 2. Sinkronisasi Skema ke Neon PostgreSQL
+npm run prisma:push
+
+# 3. Masukkan Data Seed Contoh (Admin, Dokter, Pasien, Jadwal)
+npm run prisma:seed
 ```
 
-### 4. Running Locally
-```bash
-# Terminal 1: Start NestJS Backend
-cd apps/api
-npm run start:dev
+### 3. Menjalankan Server Pengembangan (Development Mode)
+Buka 2 jendela terminal di folder root:
 
-# Terminal 2: Start Next.js Frontend
-cd apps/web
-npm run dev
+* **Terminal 1 — Backend NestJS API (`http://localhost:4000`):**
+  ```powershell
+  npm run dev:api
+  ```
+
+* **Terminal 2 — Frontend Next.js PWA (`http://localhost:3000`):**
+  ```powershell
+  npm run dev:web
+  ```
+
+### 4. Build Production
+Untuk memvalidasi dan mengompilasi seluruh aplikasi:
+```powershell
+npm run build
 ```
 
-### 5. Running with Docker Load Balancer
-```bash
-docker-compose up --build
-```
-The application will be accessible at `http://localhost`.
+---
+
+## 🛠️ Troubleshooting & Port Management
+
+### Mengatasi "Another next dev server is already running / Port 3000 is in use"
+Jika Next.js mendeteksi proses server lain yang sedang berjalan di port 3000/3001/3002:
+
+* **Matikan proses Next.js yang berjalan di background (Windows PowerShell):**
+  ```powershell
+  # Cari dan matikan proses node yang memegang port
+  Get-Process -Name node | Stop-Process -Force
+  ```
+  *Atau gunakan perintah Taskkill jika PID diketahui:*
+  ```powershell
+  taskkill /PID <PID_NUMBER> /F
+  ```
+* **Jalankan ulang frontend:**
+  ```powershell
+  npm run dev:web
+  ```
 
 ---
 

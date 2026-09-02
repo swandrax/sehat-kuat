@@ -9,9 +9,9 @@
     "build": "npm --prefix apps/api run build && npm --prefix apps/web run build",
     "build:api": "npm --prefix apps/api run build",
     "build:web": "npm --prefix apps/web run build",
-    "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push",
-    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:generate": "npx prisma generate",
+    "prisma:push": "npx prisma db push",
+    "prisma:seed": "npx tsx prisma/seed.ts",
     "postinstall": "prisma skills sync || exit 0"
   },
   "devDependencies": {
