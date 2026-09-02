@@ -17,6 +17,16 @@ out/
 .env.test.local
 .env.production.local
 
+# Agent configs and IDE skills
+.agents/
+.claude/
+.cursor/
+.devin/
+.gemini/
+AGENTS.md
+CLAUDE.md
+*.md
+
 # Logs
 logs
 *.log
