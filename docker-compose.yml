@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # Load Balancer & Reverse Proxy
+  load_balancer:
+    image: nginx:alpine
+    container_name: kliniksehat_load_balancer
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api_1
+      - api_2
+      - web
+      - ai_service
+    restart: always
+
+  # NestJS API Instance 1
+  api_1:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: kliniksehat_api_1
+    environment:
+      - PORT=4000
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    restart: always
+
+  # NestJS API Instance 2 (Load Balanced Cluster)
+  api_2:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: kliniksehat_api_2
+    environment:
+      - PORT=4000
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    restart: always
+
+  # FastAPI AI Service
+  ai_service:
+    build:
+      context: ./services/ai
+      dockerfile: Dockerfile
+    container_name: kliniksehat_ai_service
+    environment:
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL}
+    restart: always
+
+  # Next.js Web Frontend
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: kliniksehat_web
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost/api/v1
+    restart: always
+
+  # Upstash / Redis Cache & BullMQ
+  redis:
+    image: redis:alpine
+    container_name: kliniksehat_redis
+    ports:
+      - "6379:6379"
+    restart: always
