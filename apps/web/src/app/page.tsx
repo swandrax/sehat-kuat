@@ -44,9 +44,15 @@ export default function Home() {
           </div>
           <p className="text-xs text-primary-50 mb-4">Asisten kesehatan pintar untuk membantu Anda.</p>
           <div className="flex flex-wrap gap-2">
-            <AIPill label="Pahami Keluhan" />
-            <AIPill label="Pahami Hasil Lab" />
-            <AIPill label="Tanya Obat" />
+            <Link href="/ai-screening?prompt=Pahami Keluhan">
+              <AIPill label="Pahami Keluhan" />
+            </Link>
+            <Link href="/ai-screening?prompt=Pahami Hasil Lab">
+              <AIPill label="Pahami Hasil Lab" />
+            </Link>
+            <Link href="/ai-screening?prompt=Tanya Obat">
+              <AIPill label="Tanya Obat" />
+            </Link>
           </div>
         </div>
         <Bot className="absolute -bottom-4 -right-4 w-32 h-32 text-white/10" />

@@ -30,8 +30,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
         code = anyRes.error || exception.name;
       }
     } else if (exception instanceof Error) {
-      message = exception.message;
+      const isProduction = process.env.NODE_ENV === 'production';
+      message = isProduction ? 'Internal server error' : exception.message;
       code = exception.name;
+      
+      if (!isProduction) {
+        console.error(exception);
+      }
     }
 
     // Never leak internal database credentials or SQL syntax in production

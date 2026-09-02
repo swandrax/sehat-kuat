@@ -2,6 +2,9 @@
   "name": "sehat-kuat",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "dev": "npm --prefix apps/web run dev",
     "dev:web": "npm --prefix apps/web run dev",
@@ -12,7 +15,7 @@
     "prisma:generate": "npx prisma generate",
     "prisma:push": "npx prisma db push",
     "prisma:seed": "npx tsx prisma/seed.ts",
-    "postinstall": "prisma skills sync || exit 0"
+    "postinstall": "prisma generate"
   },
   "devDependencies": {
     "@prisma/client": "6.4.1",

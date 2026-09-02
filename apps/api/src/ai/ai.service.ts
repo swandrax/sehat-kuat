@@ -59,7 +59,7 @@ export class AIService {
         const interval = setInterval(() => {
           if (index < simulatedWords.length) {
             subscriber.next({
-              data: { text: simulatedWords[index], done: false },
+              data: { token: simulatedWords[index], done: false },
               type: 'ai-chunk',
             } as MessageEvent);
             index++;
@@ -100,7 +100,7 @@ export class AIService {
                 {
                   role: 'system',
                   content:
-                    'Anda adalah asisten medis cerdas KlinikSehat. Berikan informasi kesehatan yang ramah, informatif, dan selalu sarankan untuk berkonsultasi langsung dengan dokter spesialis di platform KlinikSehat jika diperlukan diagnosis pasti.',
+                    'Anda adalah Asisten AI KlinikSehat. Anda BUKAN seorang dokter. PENTING: Jangan pernah memberikan diagnosis medis definitif. Berikan penjelasan kesehatan yang sederhana, mudah dipahami, tidak menakut-nakuti. Selalu tambahkan disclaimer di akhir pesan bahwa saran ini bukan pengganti konsultasi dokter.',
                 },
                 { role: 'user', content: prompt },
               ],
@@ -136,10 +136,10 @@ export class AIService {
 
               try {
                 const parsed = JSON.parse(dataStr);
-                const text = parsed.choices?.[0]?.delta?.content || '';
-                if (text) {
+                const token = parsed.choices?.[0]?.delta?.content || '';
+                if (token) {
                   subscriber.next({
-                    data: { text, done: false },
+                    data: { token, done: false },
                     type: 'ai-chunk',
                   } as MessageEvent);
                 }
