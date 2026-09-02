@@ -1,10 +1,23 @@
 {
+  "name": "sehat-kuat",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
+    "dev": "npm --prefix apps/web run dev",
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:api": "npm --prefix apps/api run start:dev",
+    "build": "npm --prefix apps/api run build; npm --prefix apps/web run build",
+    "build:api": "npm --prefix apps/api run build",
+    "build:web": "npm --prefix apps/web run build",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "prisma:seed": "tsx prisma/seed.ts",
     "postinstall": "prisma skills sync || exit 0"
   },
   "devDependencies": {
     "@prisma/client": "6.4.1",
-    "prisma": "6.4.1"
+    "prisma": "6.4.1",
+    "tsx": "^4.19.3"
   },
   "dependencies": {
     "class-transformer": "^0.5.1",
