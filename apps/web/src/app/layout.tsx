@@ -56,8 +56,6 @@ export const viewport = {
   themeColor: "#059669",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 import { AppLayout } from "@/components/layout/AppLayout";
