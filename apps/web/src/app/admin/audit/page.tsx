@@ -46,7 +46,6 @@ export default function AdminAuditLogsPage() {
     if (res.success && res.data) {
       setLogs(res.data);
     } else {
-      // Fallback mock audit events
       setLogs([
         {
           id: "log-1",
@@ -54,7 +53,7 @@ export default function AdminAuditLogsPage() {
           resource: "MedicalRecord",
           details: { recordId: "rec-882", patientId: "pat-1" },
           createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-          user: { name: "dr. Andi Setiawan", email: "andi@kliniksehat.id", role: { name: "DOCTOR" } },
+          user: { name: "dr. Andi Setiawan", email: "andi@zavoralife.id", role: { name: "DOCTOR" } },
         },
         {
           id: "log-2",
@@ -96,36 +95,36 @@ export default function AdminAuditLogsPage() {
   const getActionIcon = (action: string) => {
     switch (action) {
       case "MEDICAL_RECORD_VIEWED":
-        return <Eye className="w-4 h-4 text-purple-600" />;
+        return <Eye className="w-4 h-4 text-emerald-600" />;
       case "LOGIN":
-        return <KeyRound className="w-4 h-4 text-emerald-600" />;
+        return <KeyRound className="w-4 h-4 text-teal-600" />;
       case "USER_CREATED":
         return <UserPlus className="w-4 h-4 text-blue-600" />;
       case "PAYMENT_CREATED":
         return <CreditCard className="w-4 h-4 text-amber-600" />;
       default:
-        return <FileText className="w-4 h-4 text-gray-600" />;
+        return <FileText className="w-4 h-4 text-slate-600" />;
     }
   };
 
   return (
-    <div className="p-4 space-y-5 pb-28 bg-gray-50 min-h-screen">
+    <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.back()}
-          className="w-9 h-9 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition shadow-sm"
+          className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition shadow-2xs"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-lg font-bold text-gray-900">Audit Logs & Keamanan</h1>
-          <p className="text-xs text-gray-500">Pencatatan aktivitas sistem dan riwayat akses</p>
+          <h1 className="text-lg font-bold text-slate-900">Audit Logs & Keamanan Zavora Life</h1>
+          <p className="text-xs text-slate-500">Pencatatan real-time aktivitas sistem dan riwayat akses data klinis</p>
         </div>
       </div>
 
       {/* Filter Chips */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
         {[
           { label: "Semua Aktivitas", value: "ALL" },
           { label: "Akses Rekam Medis", value: "MEDICAL_RECORD_VIEWED" },
@@ -138,8 +137,8 @@ export default function AdminAuditLogsPage() {
             onClick={() => setSelectedAction(tab.value)}
             className={`px-3.5 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition shadow-2xs ${
               selectedAction === tab.value
-                ? "bg-primary-600 text-white"
-                : "bg-white text-gray-600 border border-gray-100 hover:bg-gray-50"
+                ? "bg-emerald-600 text-white"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
             }`}
           >
             {tab.label}
@@ -151,20 +150,20 @@ export default function AdminAuditLogsPage() {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((n) => (
-            <div key={n} className="bg-white p-4 rounded-3xl border border-gray-100 animate-pulse space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-              <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+            <div key={n} className="bg-white p-5 rounded-3xl border border-slate-200 animate-pulse space-y-2">
+              <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+              <div className="h-3 bg-slate-200 rounded w-2/3"></div>
             </div>
           ))}
         </div>
       ) : logs.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-3xl border border-gray-100 p-6 space-y-2">
-          <ShieldAlert className="w-10 h-10 text-gray-300 mx-auto" />
-          <p className="text-xs font-bold text-gray-700">Tidak ada log aktivitas</p>
-          <p className="text-[11px] text-gray-500">Belum ada catatan aktivitas untuk filter ini.</p>
+        <div className="text-center py-16 bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 space-y-2">
+          <ShieldAlert className="w-10 h-10 text-slate-300 mx-auto" />
+          <p className="text-xs font-bold text-slate-700">Tidak ada log aktivitas</p>
+          <p className="text-[11px] text-slate-500">Belum ada catatan aktivitas untuk filter ini.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3.5">
           {logs.map((log) => {
             const timeAgo = new Date(log.createdAt).toLocaleTimeString("id-ID", {
               hour: "2-digit",
@@ -174,25 +173,25 @@ export default function AdminAuditLogsPage() {
             return (
               <div
                 key={log.id}
-                className="bg-white p-4 rounded-3xl border border-gray-100 shadow-xs flex items-start gap-3.5"
+                className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-start gap-3.5 hover:border-emerald-300 transition"
               >
-                <div className="w-9 h-9 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 mt-0.5">
                   {getActionIcon(log.action)}
                 </div>
 
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-900">{log.action}</span>
-                    <span className="text-[10px] text-gray-400 font-mono">{timeAgo} WIB</span>
+                    <span className="text-xs font-bold text-slate-900">{log.action}</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{timeAgo} WIB</span>
                   </div>
 
-                  <p className="text-[11px] text-gray-600">
-                    Aktor: <span className="font-semibold text-gray-800">{log.user?.name || "System"}</span>{" "}
+                  <p className="text-[11px] text-slate-600">
+                    Aktor: <span className="font-semibold text-slate-800">{log.user?.name || "System"}</span>{" "}
                     ({log.user?.role?.name || "USER"})
                   </p>
 
                   {log.details && (
-                    <div className="bg-gray-50 p-2 rounded-xl text-[10px] font-mono text-gray-500 truncate">
+                    <div className="bg-slate-50 p-2.5 rounded-xl text-[10px] font-mono text-slate-500 truncate border border-slate-100">
                       {JSON.stringify(log.details)}
                     </div>
                   )}

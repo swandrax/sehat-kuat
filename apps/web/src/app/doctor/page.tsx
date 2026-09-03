@@ -12,6 +12,10 @@ import {
   PhoneCall,
   ChevronRight,
   ShieldCheck,
+  FileText,
+  Activity,
+  Search,
+  Filter,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { appointmentsApi, Appointment } from "@/lib/api/appointments";
@@ -33,7 +37,6 @@ export default function DoctorDashboardPage() {
     if (res.success && res.data) {
       setAppointments(res.data);
     } else {
-      // Fallback mock doctor queue
       setAppointments([
         {
           id: "apt-1",
@@ -42,11 +45,12 @@ export default function DoctorDashboardPage() {
           appointmentDate: new Date().toISOString(),
           appointmentTime: "09:00",
           status: "CHECKED_IN",
-          notes: "Nyeri dada ringan setelah aktivitas berat",
+          notes: "Nyeri dada sebelah kiri setelah berolahraga berat",
           patient: {
             id: "pat-1",
             gender: "Laki-laki",
-            user: { name: "Budi Santoso", phone: "08123456789" },
+            bloodType: "O+",
+            user: { name: "Budi Santoso", phone: "08123456789", email: "budi@pasien.id" },
           },
           queue: { queueNumber: 1, status: "WAITING" },
         },
@@ -57,11 +61,12 @@ export default function DoctorDashboardPage() {
           appointmentDate: new Date().toISOString(),
           appointmentTime: "09:30",
           status: "CONFIRMED",
-          notes: "Kontrol diabetes rutin dan evaluasi gula darah puasa",
+          notes: "Evaluasi rutin gula darah puasa dan kepatuhan minum obat",
           patient: {
             id: "pat-2",
             gender: "Perempuan",
-            user: { name: "Siti Rahma", phone: "08198765432" },
+            bloodType: "B+",
+            user: { name: "Siti Rahma", phone: "08198765432", email: "siti@pasien.id" },
           },
           queue: { queueNumber: 2, status: "WAITING" },
         },
@@ -72,11 +77,12 @@ export default function DoctorDashboardPage() {
           appointmentDate: new Date().toISOString(),
           appointmentTime: "08:30",
           status: "COMPLETED",
-          notes: "Pemeriksaan ISPA & batuk berdahak",
+          notes: "Pemeriksaan ISPA & batuk berdahak ringan",
           patient: {
             id: "pat-3",
             gender: "Laki-laki",
-            user: { name: "Ahmad Fauzi", phone: "08112233445" },
+            bloodType: "A+",
+            user: { name: "Ahmad Fauzi", phone: "08112233445", email: "ahmad@pasien.id" },
           },
           queue: { queueNumber: 0, status: "COMPLETED" },
         },
@@ -89,71 +95,100 @@ export default function DoctorDashboardPage() {
     toast.success(`Memanggil nomor antrean #${queueNum} (${name})`);
   };
 
-  const waitingCount = appointments.filter((a) => ["CONFIRMED", "CHECKED_IN", "PENDING"].includes(a.status)).length;
+  const waitingCount = appointments.filter((a) =>
+    ["CONFIRMED", "CHECKED_IN", "PENDING"].includes(a.status),
+  ).length;
   const completedCount = appointments.filter((a) => a.status === "COMPLETED").length;
 
   return (
-    <div className="p-4 space-y-5 pb-24 bg-gray-50 min-h-screen">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary-600 text-white flex items-center justify-center font-bold shadow-sm">
-            <Stethoscope className="w-5 h-5" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-wider">
+            <Stethoscope className="w-4 h-4 text-emerald-600" />
+            <span>Dokter Spesialis Portal • Zavora Life</span>
           </div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
+            Dashboard & Antrean Pasien
+          </h1>
+          <p className="text-xs text-slate-500">
+            Kelola jadwal konsultasi, rekam medis klinis, dan antrean telemedisin hari ini
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 self-start">
+          <Link
+            href="/doctor/schedule"
+            className="px-3.5 py-2.5 bg-white border border-slate-200 hover:border-emerald-500 text-slate-700 rounded-xl text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
+          >
+            <Calendar className="w-4 h-4 text-emerald-600" /> Atur Jadwal Praktik
+          </Link>
+        </div>
+      </div>
+
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold text-gray-900">Portal Dokter</h1>
-            <p className="text-xs text-gray-500">KlinikSehat Telemedicine & EMR</p>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Pasien Terjadwal</span>
+            <p className="text-3xl font-black text-slate-900 mt-1">{appointments.length}</p>
+            <span className="text-[10px] text-slate-500">Hari ini</span>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center">
+            <Users className="w-6 h-6" />
           </div>
         </div>
 
-        <Link
-          href="/doctor/schedule"
-          className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-bold transition shadow-xs"
-        >
-          <Calendar className="w-4 h-4 text-primary-600" /> Atur Jadwal
-        </Link>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Menunggu Diperiksa</span>
+            <p className="text-3xl font-black text-amber-700 mt-1">{waitingCount}</p>
+            <span className="text-[10px] text-amber-600">Dalam antrean aktif</span>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center">
+            <Clock className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Selesai Konsultasi</span>
+            <p className="text-3xl font-black text-emerald-700 mt-1">{completedCount}</p>
+            <span className="text-[10px] text-emerald-600">Rekam medis tersimpan</span>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+            <CheckCircle2 className="w-6 h-6" />
+          </div>
+        </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-xs">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Pasien</p>
-          <p className="text-2xl font-black text-gray-900 mt-0.5">{appointments.length}</p>
-        </div>
-        <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-100 shadow-xs">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Menunggu</p>
-          <p className="text-2xl font-black text-amber-800 mt-0.5">{waitingCount}</p>
-        </div>
-        <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-100 shadow-xs">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Selesai</p>
-          <p className="text-2xl font-black text-emerald-800 mt-0.5">{completedCount}</p>
-        </div>
-      </div>
-
-      {/* Live Queue Section */}
-      <div className="space-y-3">
+      {/* Patient Queue List */}
+      <section className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-            <Users className="w-4 h-4 text-primary-600" />
-            Antrean Pasien Hari Ini
-          </h2>
-          <span className="text-[11px] font-semibold text-gray-400">Real-time</span>
+          <div>
+            <h2 className="text-base font-bold text-slate-900">Daftar Antrean Pasien Hari Ini</h2>
+            <p className="text-xs text-slate-500">Pilih pasien untuk memulai sesi telekonsultasi atau mencatat SOAP EMR</p>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
+            Live Queue Real-Time
+          </span>
         </div>
 
         {loading ? (
           <div className="space-y-3">
             {[1, 2].map((n) => (
-              <div key={n} className="bg-white p-5 rounded-3xl border border-gray-100 animate-pulse space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              <div key={n} className="p-5 bg-slate-50 rounded-2xl animate-pulse space-y-2">
+                <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+                <div className="h-3 bg-slate-200 rounded w-1/2"></div>
               </div>
             ))}
           </div>
         ) : appointments.length === 0 ? (
-          <div className="text-center py-10 bg-white rounded-3xl border border-gray-100 p-6 space-y-2">
-            <Users className="w-10 h-10 text-gray-300 mx-auto" />
-            <p className="text-xs font-bold text-gray-700">Tidak ada antrean saat ini</p>
-            <p className="text-[11px] text-gray-500">Semua pasien yang terjadwal telah selesai diperiksa.</p>
+          <div className="text-center py-12 bg-slate-50 rounded-2xl border border-slate-200 p-6 space-y-2">
+            <Users className="w-10 h-10 text-slate-300 mx-auto" />
+            <p className="text-xs font-bold text-slate-700">Tidak ada antrean aktif</p>
+            <p className="text-[11px] text-slate-500">Semua pasien terjadwal telah selesai diperiksa.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -164,77 +199,82 @@ export default function DoctorDashboardPage() {
               return (
                 <div
                   key={apt.id}
-                  className={`p-4 rounded-3xl border shadow-xs transition ${
+                  className={`p-4 sm:p-5 rounded-2xl border transition shadow-2xs ${
                     isCompleted
-                      ? "bg-gray-50/70 border-gray-200 opacity-75"
-                      : "bg-white border-gray-100 hover:border-primary-200"
+                      ? "bg-slate-50/60 border-slate-200 opacity-75"
+                      : "bg-white border-slate-200/80 hover:border-emerald-300"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
                       <div
-                        className={`w-11 h-11 rounded-2xl flex flex-col items-center justify-center font-bold ${
+                        className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center font-bold shrink-0 ${
                           isCompleted
-                            ? "bg-gray-200 text-gray-600"
-                            : "bg-primary-50 border border-primary-200 text-primary-700"
+                            ? "bg-slate-200 text-slate-600"
+                            : "bg-emerald-50 border border-emerald-200 text-emerald-800"
                         }`}
                       >
-                        <span className="text-[8px] uppercase">Antrean</span>
-                        <span className="text-base font-black">
+                        <span className="text-[8px] uppercase font-semibold">Antrean</span>
+                        <span className="text-lg font-black leading-none">
                           #{apt.queue?.queueNumber || "-"}
                         </span>
                       </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-gray-900">{patientName}</h3>
-                        <p className="text-[11px] text-gray-500 flex items-center gap-1.5 mt-0.5">
-                          <Clock className="w-3 h-3 text-gray-400" />
-                          <span>{apt.appointmentTime} WIB</span>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-slate-900">{patientName}</h3>
+                          <span
+                            className={`text-[9px] px-2.5 py-0.5 rounded-full font-bold uppercase ${
+                              isCompleted
+                                ? "bg-slate-200 text-slate-600"
+                                : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {isCompleted ? "Selesai" : "Menunggu"}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-500 flex items-center gap-2">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" /> {apt.appointmentTime} WIB
+                          </span>
                           <span>•</span>
                           <span>{apt.patient?.gender || "Pasien"}</span>
+                          <span>•</span>
+                          <span>Gol. Darah: {apt.patient?.bloodType || "O+"}</span>
                         </p>
+
+                        {apt.notes && (
+                          <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl mt-1 border border-slate-100">
+                            <span className="font-semibold text-slate-900">Keluhan:</span> {apt.notes}
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    <span
-                      className={`text-[9px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
-                        isCompleted
-                          ? "bg-gray-200 text-gray-600"
-                          : "bg-amber-100 text-amber-800"
-                      }`}
-                    >
-                      {isCompleted ? "Selesai" : "Menunggu"}
-                    </span>
+                    {!isCompleted && (
+                      <div className="flex items-center gap-2 sm:self-center shrink-0">
+                        <button
+                          onClick={() => handleCallPatient(apt.queue?.queueNumber || 1, patientName)}
+                          className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                        >
+                          <PhoneCall className="w-3.5 h-3.5" /> Panggil
+                        </button>
+                        <Link
+                          href={`/doctor/consultations/${apt.id}`}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 active:scale-95"
+                        >
+                          <Play className="w-3.5 h-3.5 fill-current" /> Periksa Pasien
+                        </Link>
+                      </div>
+                    )}
                   </div>
-
-                  {apt.notes && (
-                    <p className="text-xs text-gray-600 bg-gray-50 p-2.5 rounded-xl mt-3">
-                      <span className="font-semibold text-gray-700">Keluhan:</span> {apt.notes}
-                    </p>
-                  )}
-
-                  {!isCompleted && (
-                    <div className="pt-3 mt-3 border-t border-gray-100 flex items-center gap-2">
-                      <button
-                        onClick={() => handleCallPatient(apt.queue?.queueNumber || 1, patientName)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition"
-                      >
-                        <PhoneCall className="w-3.5 h-3.5" /> Panggil
-                      </button>
-
-                      <Link
-                        href={`/doctor/consultations/${apt.id}`}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-current" /> Mulai Periksa
-                      </Link>
-                    </div>
-                  )}
                 </div>
               );
             })}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

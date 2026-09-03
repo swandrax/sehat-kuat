@@ -247,13 +247,13 @@ function ChatRoom({ doctor, onBack }: { doctor: DoctorChat; onBack: () => void }
     {
       id: "1",
       sender: "system",
-      text: "Sesi konsultasi terenkripsi telah dimulai. Percakapan ini dilindungi oleh standar keamanan data medis KlinikSehat.",
+      text: "Sesi telekonsultasi terenkripsi telah dimulai. Percakapan ini dilindungi oleh standar privasi data medis Zavora Life.",
       time: "10:00",
     },
     {
       id: "2",
       sender: "doctor",
-      text: `Halo! Selamat datang di KlinikSehat. Saya ${doctor.name}. Ada keluhan kesehatan apa yang bisa saya bantu hari ini?`,
+      text: `Halo! Selamat datang di Zavora Life. Saya ${doctor.name}. Ada keluhan kesehatan apa yang bisa saya bantu hari ini?`,
       time: "10:01",
     },
   ]);

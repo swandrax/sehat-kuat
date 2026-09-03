@@ -1,62 +1,72 @@
 "use client";
 
-import { ArrowLeft, ShieldCheck, CheckCircle2, Umbrella } from "lucide-react";
+import { ArrowLeft, ShieldCheck, CheckCircle2, Umbrella, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { toast } from "sonner";
 
 export default function SubscriptionPage() {
   const router = useRouter();
 
+  const handleSelectPlan = (planName: string) => {
+    toast.success(`Paket ${planName} dipilih. Mengarahkan ke pembayaran Zavora Life...`);
+  };
+
   return (
-    <div className="p-4 space-y-5 pb-24 bg-gray-50 min-h-screen max-w-md mx-auto">
+    <div className="max-w-2xl mx-auto space-y-5 pb-24">
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.back()}
-          className="w-9 h-9 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition shadow-sm"
+          className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition shadow-2xs"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-lg font-bold text-gray-900">Langganan KlinikSehat</h1>
-          <p className="text-xs text-gray-500">Proteksi & akses dokter 24/7</p>
+          <h1 className="text-lg font-bold text-slate-900">Langganan Zavora Life Protection</h1>
+          <p className="text-xs text-slate-500">Proteksi preventif & akses dokter spesialis 24/7</p>
         </div>
       </div>
 
       {/* Banner */}
-      <div className="bg-gradient-to-br from-primary-600 to-blue-700 text-white p-5 rounded-3xl shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-br from-emerald-800 via-emerald-700 to-teal-900 text-white p-6 rounded-3xl shadow-md relative overflow-hidden space-y-3">
         <Umbrella className="w-24 h-24 text-white/10 absolute -right-4 -bottom-4" />
-        <span className="bg-amber-400 text-amber-950 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
-          KlinikSehat Protection
+        <span className="bg-emerald-400 text-emerald-950 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+          Zavora Life Protection
         </span>
-        <h2 className="text-xl font-bold mt-2">Langganan Hemat Kesehatan Keluarga</h2>
-        <p className="text-xs text-primary-100 mt-1">Konsultasi dokter tanpa batas, diskon obat hingga 30%, dan bebas antre.</p>
+        <h2 className="text-xl font-black text-white">Langganan Hemat Kesehatan Keluarga</h2>
+        <p className="text-xs text-emerald-100/90 leading-relaxed max-w-md">
+          Konsultasi dokter tanpa batas, diskon obat hingga 30%, dan prioritas antrean telemedisin.
+        </p>
       </div>
 
       {/* Plans */}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <PlanCard
           title="Paket Perorangan"
           price="Rp 49.000"
           period="/bulan"
           features={[
             "Konsultasi Dokter Umum tanpa batas",
-            "Diskon 15% pembelian obat",
-            "Bebas antre konsultasi online",
+            "Diskon 15% apotek mitra resmi",
+            "Akses AI Health Assistant 24/7",
+            "Penyimpanan Rekam Medis Cloud",
           ]}
           isPopular={false}
+          onSelect={() => handleSelectPlan("Paket Perorangan")}
         />
         <PlanCard
           title="Paket Keluarga Premium"
           price="Rp 99.000"
           period="/bulan"
           features={[
-            "Konsultasi Dokter Umum & Spesialis (hingga 4 anggota)",
-            "Diskon 30% pembelian obat & gratis ongkir",
-            "Layanan AI Screening 24/7",
-            "Prioritas pembuatan janji temu",
+            "Konsultasi Dokter Spesialis (hingga 4 anggota)",
+            "Diskon 30% apotek & gratis ongkir",
+            "Prioritas nomor antrean periksa",
+            "Monitoring tanda vital keluarga",
           ]}
           isPopular={true}
+          onSelect={() => handleSelectPlan("Paket Keluarga Premium")}
         />
       </div>
 
@@ -65,28 +75,58 @@ export default function SubscriptionPage() {
   );
 }
 
-function PlanCard({ title, price, period, features, isPopular }: any) {
+function PlanCard({
+  title,
+  price,
+  period,
+  features,
+  isPopular,
+  onSelect,
+}: {
+  title: string;
+  price: string;
+  period: string;
+  features: string[];
+  isPopular: boolean;
+  onSelect: () => void;
+}) {
   return (
-    <div className={`p-5 rounded-3xl border ${isPopular ? "border-primary-500 bg-white ring-2 ring-primary-500/20 shadow-md" : "border-gray-200 bg-white"} relative`}>
+    <div
+      className={`p-6 rounded-3xl border flex flex-col justify-between space-y-4 relative transition ${
+        isPopular
+          ? "border-emerald-500 bg-white ring-2 ring-emerald-500/20 shadow-md"
+          : "border-slate-200 bg-white shadow-2xs"
+      }`}
+    >
       {isPopular && (
-        <span className="absolute -top-3 right-5 bg-primary-600 text-white text-[9px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider">
-          Paling Laris
+        <span className="absolute -top-3 right-5 bg-emerald-600 text-white text-[9px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+          Rekomendasi
         </span>
       )}
-      <h3 className="font-bold text-gray-900 text-base">{title}</h3>
-      <div className="mt-2 flex items-baseline gap-1">
-        <span className="text-2xl font-black text-primary-600">{price}</span>
-        <span className="text-xs text-gray-500 font-medium">{period}</span>
+      <div>
+        <h3 className="font-bold text-slate-900 text-base">{title}</h3>
+        <div className="mt-2 flex items-baseline gap-1">
+          <span className="text-2xl font-black text-emerald-700">{price}</span>
+          <span className="text-xs text-slate-400 font-medium">{period}</span>
+        </div>
+        <div className="mt-4 space-y-2.5 border-t border-slate-100 pt-4">
+          {features.map((feat: string, idx: number) => (
+            <div key={idx} className="flex items-center gap-2 text-xs text-slate-700">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{feat}</span>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
-        {features.map((feat: string, idx: number) => (
-          <div key={idx} className="flex items-center gap-2 text-xs text-gray-700">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-            <span>{feat}</span>
-          </div>
-        ))}
-      </div>
-      <button className={`w-full mt-5 py-3 rounded-2xl font-bold text-xs transition ${isPopular ? "bg-primary-600 text-white hover:bg-primary-700 shadow-sm" : "bg-gray-100 text-gray-800 hover:bg-gray-200"}`}>
+
+      <button
+        onClick={onSelect}
+        className={`w-full py-3 rounded-2xl font-bold text-xs transition active:scale-95 ${
+          isPopular
+            ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs"
+            : "bg-slate-100 text-slate-800 hover:bg-slate-200"
+        }`}
+      >
         Pilih Paket
       </button>
     </div>

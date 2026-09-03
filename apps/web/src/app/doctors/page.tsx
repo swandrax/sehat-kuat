@@ -3,302 +3,313 @@
 import { useState } from "react";
 import {
   Search,
-  Calendar,
-  MapPin,
-  Flame,
-  ThumbsUp,
-  Mail,
-  User,
-  Menu,
   Stethoscope,
-  Activity,
+  ShieldCheck,
+  Star,
+  MapPin,
+  Calendar,
+  Clock,
+  Filter,
   CheckCircle2,
+  ChevronRight,
+  ArrowLeft,
+  Sparkles,
+  Phone,
 } from "lucide-react";
 import Link from "next/link";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { useRouter } from "next/navigation";
 
-interface Procedure {
+interface DoctorProfile {
   id: string;
-  title: string;
-  category: string;
-  location: string;
-  distance: string;
-  patientCount: string;
-  isAvailableSoon: boolean;
-  isPopular?: boolean;
-  price: string;
+  name: string;
+  specialization: string;
+  experienceYears: number;
   rating: string;
-  reviews: string;
-  imageBg: string;
+  reviewCount: number;
+  clinic: string;
+  distance: string;
+  price: string;
+  nextSlot: string;
+  isAvailableToday: boolean;
+  avatarBg: string;
 }
 
-const MOCK_PROCEDURES: Procedure[] = [
+const DOCTOR_DATA: DoctorProfile[] = [
   {
-    id: "1",
-    title: "Irigasi Telinga di KlinikSehat ke Rumah Jakarta Pusat",
-    category: "Irigasi Telinga",
-    location: "Jakarta Pusat, Jakarta",
-    distance: "1.42 km dari Anda",
-    patientCount: "711 pasien sudah buat janji di rumah sakit ini",
-    isAvailableSoon: true,
-    isPopular: true,
-    price: "Rp199.000",
-    rating: "100%",
-    reviews: "43",
-    imageBg: "bg-blue-600",
+    id: "doc-1",
+    name: "dr. Andi Setiawan, Sp.PD",
+    specialization: "Spesialis Penyakit Dalam",
+    experienceYears: 8,
+    rating: "4.9",
+    reviewCount: 428,
+    clinic: "Klinik Cabang Pusat",
+    distance: "1.2 km",
+    price: "Rp 150.000",
+    nextSlot: "Hari ini, 14:00 WIB",
+    isAvailableToday: true,
+    avatarBg: "bg-emerald-600",
   },
   {
-    id: "2",
-    title: "Melahirkan Normal di Mitra Keluarga Kemayoran",
-    category: "Melahirkan Normal",
-    location: "Kemayoran, Jakarta",
-    distance: "1.05 km dari Anda",
-    patientCount: "16,6rb pasien sudah buat janji di rumah sakit ini",
-    isAvailableSoon: true,
-    isPopular: false,
-    price: "Rp12.500.000",
-    rating: "99%",
-    reviews: "154",
-    imageBg: "bg-teal-600",
+    id: "doc-2",
+    name: "dr. Amanda Kartika, Sp.A",
+    specialization: "Spesialis Anak (Pediatri)",
+    experienceYears: 6,
+    rating: "5.0",
+    reviewCount: 312,
+    clinic: "Klinik Cabang Selatan",
+    distance: "2.5 km",
+    price: "Rp 160.000",
+    nextSlot: "Hari ini, 16:30 WIB",
+    isAvailableToday: true,
+    avatarBg: "bg-teal-600",
   },
   {
-    id: "3",
-    title: "Konsultasi Dokter Spesialis Anak",
-    category: "Spesialis Anak",
-    location: "KlinikSehat Cabang Selatan",
-    distance: "2.10 km dari Anda",
-    patientCount: "4,9rb pasien sudah buat janji",
-    isAvailableSoon: true,
-    isPopular: true,
-    price: "Rp150.000",
-    rating: "98%",
-    reviews: "820",
-    imageBg: "bg-purple-600",
+    id: "doc-3",
+    name: "dr. Budi Setiawan, Sp.JP",
+    specialization: "Spesialis Jantung & Pembuluh Darah",
+    experienceYears: 12,
+    rating: "4.9",
+    reviewCount: 520,
+    clinic: "Klinik Cabang Pusat",
+    distance: "1.2 km",
+    price: "Rp 250.000",
+    nextSlot: "Besok, 09:00 WIB",
+    isAvailableToday: false,
+    avatarBg: "bg-slate-700",
+  },
+  {
+    id: "doc-4",
+    name: "dr. Rina Wijaya",
+    specialization: "Dokter Umum",
+    experienceYears: 4,
+    rating: "4.8",
+    reviewCount: 190,
+    clinic: "Klinik Cabang Barat",
+    distance: "3.1 km",
+    price: "Rp 85.000",
+    nextSlot: "Hari ini, 13:00 WIB",
+    isAvailableToday: true,
+    avatarBg: "bg-emerald-700",
   },
 ];
 
-export default function DoctorBookingPage() {
-  const [activeCategoryTab, setActiveCategoryTab] = useState("Dokter");
-  const [activeSpecTab, setActiveSpecTab] = useState("Semua");
+export default function DoctorDiscoveryPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
+  const [selectedSpecialty, setSelectedSpecialty] = useState("Semua");
   const [selectedLetter, setSelectedLetter] = useState("");
+  const [onlyAvailableToday, setOnlyAvailableToday] = useState(false);
 
-  const filteredProcedures = MOCK_PROCEDURES.filter((item) => {
-    const matchesSearch =
-      item.title.toLowerCase().includes(search.toLowerCase()) ||
-      item.category.toLowerCase().includes(search.toLowerCase());
-    const matchesLetter =
-      selectedLetter === "" ||
-      item.title.toUpperCase().startsWith(selectedLetter) ||
-      item.category.toUpperCase().startsWith(selectedLetter);
-    const matchesSpec =
-      activeSpecTab === "Semua" ||
-      item.category.toLowerCase().includes(activeSpecTab.toLowerCase());
+  const specialties = [
+    "Semua",
+    "Penyakit Dalam",
+    "Anak",
+    "Jantung",
+    "Dokter Umum",
+    "Kulit",
+    "Mata",
+    "THT",
+  ];
 
-    return matchesSearch && matchesLetter && matchesSpec;
+  const filteredDoctors = DOCTOR_DATA.filter((doc) => {
+    const matchSearch =
+      doc.name.toLowerCase().includes(search.toLowerCase()) ||
+      doc.specialization.toLowerCase().includes(search.toLowerCase()) ||
+      doc.clinic.toLowerCase().includes(search.toLowerCase());
+
+    const matchSpec =
+      selectedSpecialty === "Semua" ||
+      doc.specialization.toLowerCase().includes(selectedSpecialty.toLowerCase());
+
+    const matchLetter =
+      selectedLetter === "" || doc.name.toUpperCase().startsWith(selectedLetter);
+
+    const matchAvail = !onlyAvailableToday || doc.isAvailableToday;
+
+    return matchSearch && matchSpec && matchLetter && matchAvail;
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 max-w-md mx-auto relative">
-      {/* Top Blue Header */}
-      <div className="bg-gradient-to-b from-primary-600 to-primary-700 text-white p-4 pt-6 rounded-b-3xl shadow-md">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Stethoscope className="w-6 h-6 text-white" />
-            <h1 className="text-lg font-black tracking-wide uppercase">KLINIKSEHAT</h1>
+    <div className="space-y-6">
+      {/* Header & Page Title */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-wider">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>Dokter Terverifikasi & Berlisensi STR/SIP</span>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="p-2 hover:bg-white/10 rounded-full transition">
-              <Mail className="w-5 h-5 text-white" />
-            </button>
-            <Link href="/profile/patient" className="p-0.5 bg-white/20 rounded-full hover:bg-white/30 transition">
-              <div className="w-8 h-8 rounded-full bg-red-600 border-2 border-white text-white font-bold flex items-center justify-center text-xs">
-                S
-              </div>
-            </Link>
-          </div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
+            Temukan Dokter Spesialis
+          </h1>
+          <p className="text-xs text-slate-500">
+            Jadwalkan konsultasi tatap muka atau telemedisin dengan dokter ahli terpercaya
+          </p>
         </div>
 
-        {/* Header Card: Buat Janji Konsultasi */}
-        <div className="bg-white text-gray-900 rounded-3xl p-4 mt-4 shadow-lg border border-gray-100 flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-pink-500 text-white flex items-center justify-center shadow-md shrink-0">
-            <Calendar className="w-7 h-7" />
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-gray-900 leading-tight">Buat Janji Konsultasi</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Proses singkat, Tanpa Antre</p>
-          </div>
-        </div>
+        <Link
+          href="/appointments"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:border-emerald-500 text-slate-700 hover:text-emerald-700 rounded-xl text-xs font-bold transition shadow-2xs self-start"
+        >
+          <Calendar className="w-4 h-4 text-emerald-600" /> Janji Temu Saya
+        </Link>
       </div>
 
-      <div className="p-4 space-y-4">
-        {/* Search Bar with optimized placeholder */}
+      {/* Filter & Search Panel */}
+      <section className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4">
+        {/* Search Bar */}
         <div className="relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
+          <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
           <input
             type="text"
-            placeholder="Cari dokter, spesialisasi, atau tindakan A-Z..."
+            placeholder="Cari dokter, spesialisasi, atau lokasi klinik A-Z..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white border border-gray-200 rounded-2xl py-2.5 pl-10 pr-4 text-xs focus:outline-hidden focus:ring-2 focus:ring-primary-500 shadow-xs font-medium"
+            className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
           />
         </div>
 
-        {/* A-Z Alphabet Quick Bar */}
-        <div className="bg-white p-2 rounded-2xl border border-gray-100 shadow-2xs">
-          <div className="flex items-center justify-between text-[10px] font-bold text-gray-400 mb-1 px-1">
-            <span>Filter Cepat Nama (A-Z):</span>
-            {selectedLetter && (
-              <button
-                onClick={() => setSelectedLetter("")}
-                className="text-primary-600 hover:underline"
-              >
-                Reset
-              </button>
-            )}
-          </div>
-          <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none text-[11px] font-bold">
+        {/* A-Z Quick Filter Bar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+            A-Z:
+          </span>
+          <button
+            onClick={() => setSelectedLetter("")}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition shrink-0 ${
+              selectedLetter === ""
+                ? "bg-emerald-600 text-white shadow-2xs"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            Semua
+          </button>
+          {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((char) => (
             <button
-              onClick={() => setSelectedLetter("")}
-              className={`px-2.5 py-1 rounded-lg transition shrink-0 ${
-                selectedLetter === ""
-                  ? "bg-primary-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              key={char}
+              onClick={() => setSelectedLetter(char)}
+              className={`w-6 h-6 flex items-center justify-center rounded-lg text-xs font-bold transition shrink-0 ${
+                selectedLetter === char
+                  ? "bg-emerald-600 text-white shadow-2xs"
+                  : "bg-slate-50 text-slate-700 hover:bg-slate-100"
               }`}
             >
-              Semua
+              {char}
             </button>
-            {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((char) => (
+          ))}
+        </div>
+
+        {/* Specialization Chips & Toggle */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs font-semibold">
+            {specialties.map((spec) => (
               <button
-                key={char}
-                onClick={() => setSelectedLetter(char)}
-                className={`w-6 h-6 flex items-center justify-center rounded-lg transition shrink-0 ${
-                  selectedLetter === char
-                    ? "bg-primary-600 text-white"
-                    : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                key={spec}
+                onClick={() => setSelectedSpecialty(spec)}
+                className={`px-3.5 py-1.5 rounded-xl transition-all whitespace-nowrap ${
+                  selectedSpecialty === spec
+                    ? "bg-emerald-100/80 text-emerald-800 font-bold border border-emerald-200"
+                    : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/60"
                 }`}
               >
-                {char}
+                {spec}
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Sub-Category Tabs (Dokter, Lab Test NEW, Tindakan Medis) */}
-        <div className="grid grid-cols-3 bg-gray-200/60 p-1 rounded-2xl text-xs font-bold text-center">
-          <button
-            onClick={() => setActiveCategoryTab("Dokter")}
-            className={`py-2 rounded-xl transition-all ${
-              activeCategoryTab === "Dokter" ? "bg-white text-primary-600 shadow-xs" : "text-gray-600"
-            }`}
-          >
-            Dokter
-          </button>
-          <button
-            onClick={() => setActiveCategoryTab("Lab Test")}
-            className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1 ${
-              activeCategoryTab === "Lab Test" ? "bg-white text-primary-600 shadow-xs" : "text-gray-600"
-            }`}
-          >
-            <span>Lab Test</span>
-            <span className="bg-amber-400 text-amber-950 text-[8px] px-1 py-0.2 rounded font-extrabold">NEW</span>
-          </button>
-          <button
-            onClick={() => setActiveCategoryTab("Tindakan Medis")}
-            className={`py-2 rounded-xl transition-all ${
-              activeCategoryTab === "Tindakan Medis" ? "bg-white text-primary-600 shadow-xs" : "text-gray-600"
-            }`}
-          >
-            Tindakan Medis
-          </button>
+          <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 select-none">
+            <input
+              type="checkbox"
+              checked={onlyAvailableToday}
+              onChange={(e) => setOnlyAvailableToday(e.target.checked)}
+              className="w-4 h-4 text-emerald-600 rounded-sm focus:ring-emerald-500 cursor-pointer"
+            />
+            <span>Hanya yang buka hari ini</span>
+          </label>
         </div>
+      </section>
 
-        {/* Specialization Filter Pills */}
-        <div className="flex items-center justify-between bg-white rounded-2xl p-1 shadow-sm border border-gray-100">
-          <div className="flex gap-1 overflow-x-auto no-scrollbar text-xs font-semibold">
-            {["Semua", "Kandungan", "Anak", "THT", "Mata"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveSpecTab(tab)}
-                className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
-                  activeSpecTab === tab
-                    ? "bg-primary-50 text-primary-600 font-bold"
-                    : "text-gray-500 hover:text-gray-800"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+      {/* Doctor Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filteredDoctors.length === 0 ? (
+          <div className="col-span-full text-center py-16 bg-white rounded-3xl border border-slate-200 p-6 space-y-2">
+            <Stethoscope className="w-12 h-12 text-slate-300 mx-auto" />
+            <h3 className="text-sm font-bold text-slate-800">Tidak ada dokter ditemukan</h3>
+            <p className="text-xs text-slate-500">
+              Coba sesuaikan kata kunci pencarian atau reset filter A-Z Anda.
+            </p>
           </div>
-          <button className="p-2 text-gray-400 hover:text-gray-600 border-l border-gray-100 ml-1">
-            <Menu className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Cards List */}
-        <div className="space-y-4">
-          {filteredProcedures.map((item) => (
-            <div key={item.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-4 space-y-3 hover:border-primary-100 transition">
-              <div className="flex gap-3">
-                <div className={`w-20 h-20 rounded-2xl ${item.imageBg} text-white flex items-center justify-center font-bold shrink-0 shadow-inner`}>
-                  <Activity className="w-8 h-8 text-white/80" />
+        ) : (
+          filteredDoctors.map((doc) => (
+            <div
+              key={doc.id}
+              className="bg-white rounded-3xl border border-slate-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition p-5 flex flex-col justify-between space-y-4"
+            >
+              {/* Doctor Header */}
+              <div className="flex items-start gap-3.5">
+                <div
+                  className={`w-14 h-14 rounded-2xl ${doc.avatarBg} text-white font-black text-xl flex items-center justify-center shrink-0 shadow-inner`}
+                >
+                  {doc.name.replace(/^dr\.\s*/, "").charAt(0)}
                 </div>
+
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 text-sm leading-tight">{item.title}</h3>
-                  <div className="space-y-0.5 mt-1 text-[11px] text-gray-500">
-                    <p className="font-medium text-gray-700">{item.category}</p>
-                    <p>{item.location}</p>
-                    <p className="text-gray-400 flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-gray-400 inline" /> {item.distance}
-                    </p>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-bold text-slate-900 truncate">{doc.name}</h3>
+                    <span title="Terverifikasi STR & SIP">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                    </span>
                   </div>
-                  <span className="inline-block mt-1 text-[10px] text-primary-600 bg-primary-50 px-2 py-0.5 rounded-md font-semibold">
-                    {item.patientCount}
+                  <p className="text-xs font-semibold text-emerald-700 mt-0.5">
+                    {doc.specialization}
+                  </p>
+                  <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-1">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>{doc.clinic}</span>
+                    <span className="text-slate-300">•</span>
+                    <span>{doc.distance}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Badges Info */}
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 grid grid-cols-3 gap-2 text-center text-xs">
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-medium">Pengalaman</span>
+                  <span className="font-bold text-slate-800">{doc.experienceYears} Tahun</span>
+                </div>
+                <div className="border-x border-slate-200">
+                  <span className="text-[10px] text-slate-400 block font-medium">Penilaian</span>
+                  <span className="font-bold text-slate-900 flex items-center justify-center gap-1">
+                    <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                    {doc.rating}
                   </span>
                 </div>
-              </div>
-
-              {/* Status & Availability Badges */}
-              <div className="space-y-1 text-xs border-t border-gray-50 pt-2">
-                {item.isAvailableSoon && (
-                  <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-[11px]">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Jadwal Tersedia Segera</span>
-                  </div>
-                )}
-                {item.isPopular && (
-                  <div className="flex items-center gap-1.5 text-rose-600 font-bold text-[11px]">
-                    <Flame className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
-                    <span>Paling Dicari - Slot tindakan ini segera habis.</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Card Footer: Biaya, Ulasan, Buat Janji Button */}
-              <div className="pt-2 border-t border-gray-50 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] text-gray-400 block">Biaya</span>
-                  <span className="font-extrabold text-orange-600 text-sm">{item.price}</span>
-                  <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
-                    <ThumbsUp className="w-3 h-3 text-primary-600 fill-primary-100" />
-                    <span className="font-bold text-gray-800">{item.rating}</span>
-                    <span className="text-gray-400">({item.reviews})</span>
-                  </div>
+                  <span className="text-[10px] text-slate-400 block font-medium">Biaya Mulai</span>
+                  <span className="font-bold text-emerald-700">{doc.price}</span>
+                </div>
+              </div>
+
+              {/* Slot Availability & Action */}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] text-slate-400 block">Jadwal Terdekat</span>
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-emerald-600" /> {doc.nextSlot}
+                  </span>
                 </div>
 
                 <Link
-                  href="/appointments/new"
-                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs px-5 py-2.5 rounded-2xl shadow-sm transition active:scale-95"
+                  href={`/doctors/${doc.id}`}
+                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-xs transition active:scale-95 flex items-center gap-1.5"
                 >
-                  Buat Janji
+                  <Calendar className="w-3.5 h-3.5" /> Buat Janji
                 </Link>
               </div>
             </div>
-          ))}
-        </div>
+          ))
+        )}
       </div>
-
-      <BottomNav />
     </div>
   );
 }

@@ -1,20 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Stethoscope, HeartPulse, Sparkles, ShieldCheck } from "lucide-react";
+import { Activity, ShieldCheck } from "lucide-react";
 
 export function AppSplashLoader() {
   const [visible, setVisible] = useState(true);
   const [fadeState, setFadeState] = useState<"showing" | "fading" | "hidden">("showing");
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    // Show splash screen for 1.2s on initial app load, then smoothly fade out
     const timer = setTimeout(() => {
       setFadeState("fading");
       const removeTimer = setTimeout(() => {
         setFadeState("hidden");
         setVisible(false);
-      }, 500); // fade duration
+      }, 500);
       return () => clearTimeout(removeTimer);
     }, 1200);
 
@@ -25,41 +25,54 @@ export function AppSplashLoader() {
 
   return (
     <div
-      className={`fixed inset-0 z-500 bg-gradient-to-br from-primary-700 via-primary-600 to-indigo-800 text-white flex flex-col items-center justify-between p-8 transition-opacity duration-500 max-w-md mx-auto select-none ${
+      className={`fixed inset-0 z-500 bg-slate-950 text-white flex flex-col items-center justify-between p-8 transition-opacity duration-500 select-none ${
         fadeState === "fading" ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
       {/* Top Branding Tag */}
-      <div className="pt-8 flex items-center gap-1.5 text-xs font-semibold text-primary-200 tracking-wider uppercase">
+      <div className="pt-6 flex items-center gap-2 text-xs font-semibold text-emerald-400 tracking-wider bg-emerald-950/70 px-4 py-1.5 rounded-full border border-emerald-800/60 shadow-xs">
         <ShieldCheck className="w-4 h-4 text-emerald-400" />
-        <span>Klinik Layanan Digital Terpercaya</span>
+        <span>Healthcare & Better Living</span>
       </div>
 
       {/* Center Animated Logo & Branding */}
-      <div className="flex flex-col items-center text-center space-y-4">
+      <div className="flex flex-col items-center text-center space-y-5 max-w-xs">
         <div className="relative">
           {/* Glowing Pulse Rings */}
-          <div className="absolute inset-0 rounded-3xl bg-white/20 animate-ping duration-1000"></div>
-          <div className="absolute -inset-2 rounded-3xl bg-emerald-400/20 blur-md animate-pulse"></div>
-
-          {/* Core Logo Box */}
-          <div className="relative w-24 h-24 rounded-3xl bg-white text-primary-600 shadow-2xl flex items-center justify-center transform transition-transform hover:scale-105">
-            <HeartPulse className="w-12 h-12 text-rose-500 animate-pulse" />
-            <Stethoscope className="w-7 h-7 text-primary-700 absolute right-3 bottom-3" />
+          <div className="absolute -inset-4 rounded-3xl bg-emerald-500/20 blur-xl animate-pulse"></div>
+          
+          {/* Core Emblem with Logo Image */}
+          <div className="relative w-28 h-28 rounded-3xl bg-white shadow-2xl flex items-center justify-center border border-emerald-400/30 overflow-hidden p-2 transform transition-transform hover:scale-105">
+            {!imageError ? (
+              <img
+                src="/logo-zavora.png"
+                alt="Logo Zavora Life"
+                className="w-full h-full object-contain"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <Activity className="w-14 h-14 text-emerald-600 animate-pulse" />
+            )}
           </div>
         </div>
 
-        <div>
-          <h1 className="text-2xl font-black tracking-wider uppercase text-white">
-            KLINIKSEHAT
-          </h1>
-          <p className="text-xs text-primary-100 font-medium mt-1">
-            Sehat, Kuat, & Terhubung Setiap Saat
+        {/* Text Zavora in Crisp White */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-3xl font-extrabold tracking-tight text-white drop-shadow-sm">
+              Zavora
+            </span>
+            <span className="text-3xl font-medium tracking-tight text-emerald-400 drop-shadow-sm">
+              Life
+            </span>
+          </div>
+          <p className="text-xs text-slate-300 font-medium tracking-tight">
+            All-in-One Health. Better Living.
           </p>
         </div>
 
-        {/* Loading Indicator Spinner & Text */}
-        <div className="flex flex-col items-center gap-2 pt-4">
+        {/* Loading Spinner & Status */}
+        <div className="flex flex-col items-center gap-2 pt-2">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce"></span>
             <span
@@ -71,15 +84,17 @@ export function AppSplashLoader() {
               style={{ animationDelay: "0.4s" }}
             ></span>
           </div>
-          <p className="text-[11px] text-primary-200 font-medium">
-            Menyiapkan layanan kesehatan digital...
+          <p className="text-[11px] text-slate-400 font-medium">
+            Memuat layanan kesehatan Zavora Life...
           </p>
         </div>
       </div>
 
-      {/* Bottom Version */}
+      {/* Bottom Footer */}
       <div className="pb-4 text-center">
-        <p className="text-[10px] text-primary-300">v1.0.0 • AI-Powered Telemedicine</p>
+        <p className="text-[10px] text-slate-500 font-mono">
+          Zavora Life Platform • v1.0.0
+        </p>
       </div>
     </div>
   );

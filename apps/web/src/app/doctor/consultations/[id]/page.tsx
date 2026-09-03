@@ -11,8 +11,16 @@ import {
   Trash2,
   CheckCircle2,
   ChevronLeft,
+  Sparkles,
+  ShieldCheck,
+  User,
+  HeartPulse,
+  Clock,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function DoctorConsultationWorkspace({
   params,
@@ -20,6 +28,7 @@ export default function DoctorConsultationWorkspace({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
 
   const [chiefComplaint, setChiefComplaint] = useState("");
   const [clinicalNotes, setClinicalNotes] = useState("");
@@ -32,8 +41,8 @@ export default function DoctorConsultationWorkspace({
     {
       medicineName: "",
       dosage: "",
-      frequency: "",
-      duration: "",
+      frequency: "3x sehari setelah makan",
+      duration: "5 hari",
       instructions: "",
       quantity: 1,
     },
@@ -80,12 +89,26 @@ export default function DoctorConsultationWorkspace({
     },
     onSuccess: () => {
       setIsFinished(true);
+      toast.success("Konsultasi selesai & resep digital berhasil diterbitkan!");
     },
     onError: (err: unknown) => {
       const msg = err instanceof Error ? err.message : "Gagal menyimpan rekam medis";
-      alert(msg);
+      toast.error(msg);
     },
   });
+
+  const handleGenerateAIDraft = () => {
+    const symptom = chiefComplaint || "Pasien mengeluhkan demam dan batuk berdahak 3 hari";
+    setChiefComplaint(symptom);
+    setClinicalNotes(
+      "S: Pasien demam subfebris dan batuk produktif sejak 3 hari lalu.\nO: Suhu 37.8°C, TD 120/80 mmHg, Ronkhi halus minimal bilateral.\nA: Infeksi Saluran Pernapasan Akut (ISPA) ec suspek viral.\nP: Simptomatik antipiretik, mukolitik, edukasi istirahat & hidrasi 2L/hari.",
+    );
+    setTreatment("Paracetamol 500mg 3x1 prn, Ambroxol 30mg 3x1, Vitamin C 500mg 1x1");
+    setFollowUpNotes("Kontrol kembali bila demam menetap > 5 hari atau timbul sesak napas");
+    setDiagnosisCode("J06.9");
+    setDiagnosisName("Acute upper respiratory infection, unspecified");
+    toast.success("Draf SOAP berhasil dibuat oleh AI Assistant Zavora Life!");
+  };
 
   const addPrescriptionItem = () => {
     setPrescriptionItems((prev) => [
@@ -112,26 +135,36 @@ export default function DoctorConsultationWorkspace({
   };
 
   if (isLoading) {
-    return <div className="p-6 text-center text-sm text-gray-500 animate-pulse">Memuat data rekam medis...</div>;
+    return (
+      <div className="p-8 text-center text-xs font-bold text-emerald-700 animate-pulse">
+        Memuat data rekam medis pasien...
+      </div>
+    );
   }
 
   if (isFinished) {
     return (
-      <div className="p-6 text-center space-y-6 flex flex-col items-center justify-center min-h-[80vh]">
-        <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+      <div className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200/80 shadow-sm max-w-lg mx-auto text-center space-y-6">
+        <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
           <CheckCircle2 className="w-12 h-12" />
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Konsultasi Selesai</h2>
-          <p className="text-xs text-gray-500 mt-1">
-            Rekam Medis (EMR) dan Resep Elektronik telah berhasil disimpan ke database Neon.
+        <div className="space-y-1.5">
+          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full uppercase">
+            Selesai Diperiksa
+          </span>
+          <h2 className="text-xl font-black text-slate-900 pt-2">
+            Konsultasi Telah Disimpan
+          </h2>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            Rekam Medis (EMR) dan Resep Elektronik telah berhasil disimpan ke database Zavora Life.
           </p>
         </div>
+
         <Link
-          href="/"
-          className="w-full bg-primary-600 text-white py-3 rounded-2xl font-bold text-sm shadow-md"
+          href="/doctor"
+          className="w-full inline-block bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-xs shadow-xs transition"
         >
-          Kembali ke Beranda
+          Kembali ke Antrean Dokter
         </Link>
       </div>
     );
@@ -140,202 +173,216 @@ export default function DoctorConsultationWorkspace({
   const patient = appointment?.patient;
 
   return (
-    <div className="p-4 space-y-5 pb-28">
+    <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link href="/" className="p-2 rounded-xl bg-gray-100 text-gray-600">
-          <ChevronLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <h1 className="text-base font-bold text-gray-900">Portal Telekonsultasi Dokter</h1>
-          <p className="text-[11px] text-gray-500">Pencatatan Rekam Medis & Resep Digital</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.back()}
+            className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition shadow-2xs"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-lg font-bold text-slate-900">Ruang Pemeriksaan Klinis</h1>
+            <p className="text-xs text-slate-500">Pencatatan Rekam Medis (SOAP) & E-Resep Obat</p>
+          </div>
         </div>
+
+        <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full border border-emerald-200">
+          Sesi Aktif
+        </span>
       </div>
 
       {/* Patient Information Card */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">
+      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shrink-0">
             {patient?.user?.name?.charAt(0) || "P"}
           </div>
           <div>
-            <h3 className="font-bold text-sm text-gray-900">{patient?.user?.name || "Nama Pasien"}</h3>
-            <p className="text-xs text-gray-500">{patient?.gender || "Laki-laki"} • Golongan Darah {patient?.bloodType || "O+"}</p>
+            <h3 className="font-bold text-sm text-slate-900">{patient?.user?.name || "Nama Pasien"}</h3>
+            <p className="text-xs text-slate-500">
+              {patient?.gender || "Pasien"} • Golongan Darah {patient?.bloodType || "O+"}
+            </p>
           </div>
         </div>
 
-        <div className="pt-2 border-t border-gray-50 text-xs text-gray-600 flex justify-between">
-          <span>Kontak Darurat: {patient?.emergencyContact || "-"}</span>
-          <span>Alamat: {patient?.address || "Jakarta"}</span>
+        <div className="pt-3 border-t border-slate-100 text-xs text-slate-600 grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <span>Kontak Darurat: <strong className="text-slate-800">{patient?.emergencyContact || "-"}</strong></span>
+          <span>Alamat: <strong className="text-slate-800">{patient?.address || "Jakarta"}</strong></span>
         </div>
       </div>
 
-      {/* Chief Complaint & Clinical Notes with AI Assistant */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3 text-xs">
+      {/* Chief Complaint & Clinical Notes SOAP */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4 text-xs">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
-            <FileText className="w-4 h-4 text-primary-600" />
+          <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+            <FileText className="w-4 h-4 text-emerald-600" />
             Anamnesis & Catatan Klinis (SOAP)
           </h3>
           <button
             type="button"
-            onClick={async () => {
-              const symptom = chiefComplaint || "Pasien mengeluhkan demam dan batuk berdahak 3 hari";
-              setChiefComplaint(symptom);
-              setClinicalNotes(
-                "S: Pasien demam subfebris dan batuk produktif sejak 3 hari lalu.\nO: Suhu 37.8°C, TD 120/80 mmHg, Ronkhi halus minimal bilateral.\nA: Infeksi Saluran Pernapasan Akut (ISPA) ec suspek viral.\nP: Simptomatik antipiretik, mukolitik, edukasi istirahat & hidrasi 2L/hari.",
-              );
-              setTreatment("Paracetamol 500mg 3x1 prn, Ambroxol 30mg 3x1, Vitamin C 500mg 1x1");
-              setFollowUpNotes("Kontrol kembali bila demam menetap > 5 hari atau timbul sesak napas");
-              setDiagnosisCode("J06.9");
-              setDiagnosisName("Acute upper respiratory infection, unspecified");
-            }}
-            className="flex items-center gap-1 bg-primary-50 text-primary-700 px-2.5 py-1 rounded-xl text-[11px] font-bold hover:bg-primary-100 transition border border-primary-200"
+            onClick={handleGenerateAIDraft}
+            className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-xl text-xs font-bold transition border border-emerald-200 shadow-2xs"
           >
-            ✨ Generate AI Draft SOAP
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> Generate AI Draft SOAP
           </button>
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-700 mb-1">Keluhan Utama</label>
+          <label className="block font-bold text-slate-700 mb-1">Keluhan Utama</label>
           <input
             type="text"
             value={chiefComplaint}
             onChange={(e) => setChiefComplaint(e.target.value)}
-            placeholder="Contoh: Sakit kepala dan demam sejak 3 hari"
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-primary-500"
+            placeholder="Contoh: Sakit kepala sebelah dan demam sejak 3 hari..."
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium text-slate-800"
           />
         </div>
 
         <div>
-          <label className="block font-semibold text-gray-700 mb-1">Catatan Pemeriksaan (SOAP)</label>
+          <label className="block font-bold text-slate-700 mb-1">Catatan Pemeriksaan (SOAP)</label>
           <textarea
-            rows={3}
+            rows={4}
             value={clinicalNotes}
             onChange={(e) => setClinicalNotes(e.target.value)}
-            placeholder="Observasi fisik, tanda vital, dan temuan pemeriksaan..."
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-primary-500 resize-none"
+            placeholder="Subjective, Objective, Assessment, Plan..."
+            className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden resize-none font-medium text-slate-800"
           />
         </div>
 
-        <div>
-          <label className="block font-semibold text-gray-700 mb-1">Rencana Terapi / Edukasi</label>
-          <input
-            type="text"
-            value={treatment}
-            onChange={(e) => setTreatment(e.target.value)}
-            placeholder="Contoh: Istirahat cukup, minum air putih 2L/hari"
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-primary-500"
-          />
-        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Rencana Terapi / Edukasi</label>
+            <input
+              type="text"
+              value={treatment}
+              onChange={(e) => setTreatment(e.target.value)}
+              placeholder="Contoh: Istirahat cukup, hidrasi 2L/hari"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium text-slate-800"
+            />
+          </div>
 
-        <div>
-          <label className="block font-semibold text-gray-700 mb-1">Catatan Tindak Lanjut (Follow-up)</label>
-          <input
-            type="text"
-            value={followUpNotes}
-            onChange={(e) => setFollowUpNotes(e.target.value)}
-            placeholder="Contoh: Kontrol ulang dalam 3 hari bila belum mereda"
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-primary-500"
-          />
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Catatan Tindak Lanjut (Follow-up)</label>
+            <input
+              type="text"
+              value={followUpNotes}
+              onChange={(e) => setFollowUpNotes(e.target.value)}
+              placeholder="Contoh: Kontrol ulang dalam 3 hari bila belum membaik"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium text-slate-800"
+            />
+          </div>
         </div>
       </div>
 
       {/* Diagnosis ICD-10 */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3 text-xs">
-        <h3 className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
+      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-3 text-xs">
+        <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
           <Stethoscope className="w-4 h-4 text-emerald-600" />
           Diagnosis Medis (ICD-10)
         </h3>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-3">
           <div className="col-span-1">
-            <label className="block font-semibold text-gray-700 mb-1">Kode ICD-10</label>
+            <label className="block font-bold text-slate-700 mb-1">Kode ICD-10</label>
             <input
               type="text"
               value={diagnosisCode}
               onChange={(e) => setDiagnosisCode(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 uppercase font-mono font-bold text-center"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 uppercase font-mono font-bold text-center text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500"
             />
           </div>
           <div className="col-span-2">
-            <label className="block font-semibold text-gray-700 mb-1">Nama Diagnosis</label>
+            <label className="block font-bold text-slate-700 mb-1">Nama Diagnosis</label>
             <input
               type="text"
               value={diagnosisName}
               onChange={(e) => setDiagnosisName(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500"
             />
           </div>
         </div>
       </div>
 
       {/* Electronic Prescription Builder */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3 text-xs">
+      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4 text-xs">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
-            <Pill className="w-4 h-4 text-purple-600" />
+          <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+            <Pill className="w-4 h-4 text-emerald-600" />
             Resep Obat Elektronik
           </h3>
           <button
             type="button"
             onClick={addPrescriptionItem}
-            className="flex items-center gap-1 text-primary-600 font-semibold hover:bg-primary-50 px-2 py-1 rounded-lg"
+            className="flex items-center gap-1 text-emerald-700 font-bold bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl transition"
           >
             <Plus className="w-3.5 h-3.5" /> Tambah Obat
           </button>
         </div>
 
         {prescriptionItems.map((item, idx) => (
-          <div key={idx} className="p-3 bg-gray-50 rounded-xl border border-gray-200/80 space-y-2 relative">
+          <div
+            key={idx}
+            className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5"
+          >
             <div className="flex items-center justify-between">
-              <span className="font-bold text-gray-700">Obat #{idx + 1}</span>
+              <span className="font-bold text-slate-800">Obat #{idx + 1}</span>
               {prescriptionItems.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removePrescriptionItem(idx)}
-                  className="text-red-500 hover:text-red-700 p-1"
+                  className="text-rose-500 hover:text-rose-700 p-1"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <input
                 type="text"
                 placeholder="Nama Obat (e.g. Paracetamol)"
                 value={item.medicineName}
                 onChange={(e) => updateItem(idx, "medicineName", e.target.value)}
-                className="col-span-2 bg-white border border-gray-200 rounded-lg p-2"
+                className="sm:col-span-3 bg-white border border-slate-200 rounded-xl p-2.5 font-medium text-slate-800"
               />
               <input
                 type="text"
                 placeholder="Dosis (e.g. 500mg)"
                 value={item.dosage}
                 onChange={(e) => updateItem(idx, "dosage", e.target.value)}
-                className="bg-white border border-gray-200 rounded-lg p-2"
+                className="bg-white border border-slate-200 rounded-xl p-2.5 font-medium text-slate-800"
               />
               <input
                 type="text"
                 placeholder="Frekuensi (e.g. 3x sehari)"
                 value={item.frequency}
                 onChange={(e) => updateItem(idx, "frequency", e.target.value)}
-                className="bg-white border border-gray-200 rounded-lg p-2"
+                className="bg-white border border-slate-200 rounded-xl p-2.5 font-medium text-slate-800"
+              />
+              <input
+                type="text"
+                placeholder="Durasi (e.g. 5 hari)"
+                value={item.duration}
+                onChange={(e) => updateItem(idx, "duration", e.target.value)}
+                className="bg-white border border-slate-200 rounded-xl p-2.5 font-medium text-slate-800"
               />
             </div>
           </div>
         ))}
       </div>
 
-      {/* Floating Submit Button */}
-      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-lg">
+      {/* Submit Action */}
+      <div className="pt-2">
         <button
           onClick={() => completeMutation.mutate()}
           disabled={completeMutation.isPending}
-          className="w-full bg-emerald-600 text-white py-3.5 rounded-2xl font-bold text-sm hover:bg-emerald-700 transition disabled:opacity-50 shadow-md shadow-emerald-600/20"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-2xl font-bold text-xs shadow-xs transition disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2"
         >
-          {completeMutation.isPending ? "Menyimpan Rekam Medis..." : "Selesaikan & Terbitkan Resep"}
+          <CheckCircle2 className="w-4 h-4" />
+          {completeMutation.isPending ? "Menyimpan Rekam Medis..." : "Selesaikan Konsultasi & Terbitkan Resep"}
         </button>
       </div>
     </div>
