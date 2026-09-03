@@ -4,7 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import Link from "next/link";
-import { ArrowLeft, Mail, Lock, ShieldCheck, UserPlus, Users, Stethoscope } from "lucide-react";
+import {
+  ArrowLeft,
+  Mail,
+  Lock,
+  ShieldCheck,
+  UserPlus,
+  Users,
+  Stethoscope,
+  Sparkles,
+  User,
+} from "lucide-react";
 import { ZavoraLogo } from "@/components/common/ZavoraLogo";
 import { toast } from "sonner";
 
@@ -17,18 +27,29 @@ export default function RegisterPage() {
   const login = useAuthStore((state) => state.login);
   const router = useRouter();
 
+  const handleApplyPreset = (presetName: string, presetEmail: string, presetRole: string) => {
+    setName(presetName);
+    setEmail(presetEmail);
+    setPassword("Password123!");
+    setRole(presetRole);
+    toast.info(`Preset pendaftaran ${presetName} dipilih!`);
+  };
+
   const handleLocationSync = async () => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(async (position) => {
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1"}/users/location`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            }),
-          });
+          await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1"}/users/location`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+              }),
+            }
+          );
         } catch (e) {
           console.error("Failed to sync location", e);
         }
@@ -69,24 +90,49 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
         <div className="inline-block">
           <ZavoraLogo size="lg" />
         </div>
-        <h2 className="text-xl font-black text-slate-900 tracking-tight">
+        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
           Buat Akun Zavora Life
         </h2>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Mulai langkah hidup sehat Anda bersama platform kesehatan terpadu
         </p>
       </div>
 
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 sm:px-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-5">
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md space-y-4">
+        {/* Preset Selector */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2">
+          <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            Preset Profil Uji Coba Cepat
+          </span>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => handleApplyPreset("Budi Santoso", "budi.baru@pasien.id", "PATIENT")}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold hover:bg-emerald-50 dark:hover:bg-emerald-950/60 transition flex items-center gap-1.5"
+            >
+              <User className="w-3.5 h-3.5 text-blue-600" /> Pasien Baru
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyPreset("dr. Hendra Pratama, Sp.PD", "dr.hendra@zavoralife.id", "DOCTOR")}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold hover:bg-emerald-50 dark:hover:bg-emerald-950/60 transition flex items-center gap-1.5"
+            >
+              <Stethoscope className="w-3.5 h-3.5 text-emerald-600" /> Dokter Sp.PD
+            </button>
+          </div>
+        </div>
+
+        {/* Register Form */}
+        <div className="bg-white dark:bg-slate-900 py-7 px-6 sm:px-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-5">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Nama Lengkap
               </label>
               <input
@@ -94,13 +140,13 @@ export default function RegisterPage() {
                 placeholder="Contoh: Budi Santoso"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden transition"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 px-3.5 text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-750 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden transition"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Alamat Email
               </label>
               <div className="relative">
@@ -110,14 +156,14 @@ export default function RegisterPage() {
                   placeholder="nama@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden transition"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-750 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden transition"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Buat Kata Sandi
               </label>
               <div className="relative">
@@ -127,14 +173,14 @@ export default function RegisterPage() {
                   placeholder="Minimal 6 karakter"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden transition"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-750 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden transition"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Tipe Akun
               </label>
               <div className="relative">
@@ -142,7 +188,7 @@ export default function RegisterPage() {
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden transition appearance-none"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-750 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden transition appearance-none"
                 >
                   <option value="PATIENT">Pasien / Pengguna Pribadi</option>
                   <option value="DOCTOR">Dokter Medis (SIP/STR)</option>
@@ -163,18 +209,18 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <div className="pt-2 border-t border-slate-100 text-center">
-            <p className="text-xs text-slate-600">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-center">
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               Sudah memiliki akun?{" "}
-              <Link href="/login" className="text-emerald-700 font-bold hover:underline">
+              <Link href="/login" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
                 Masuk di sini
               </Link>
             </p>
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-slate-400">
-          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+        <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-slate-400">
+          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span>Keamanan Data Medis Terstandar Zavora Life</span>
         </div>
       </div>

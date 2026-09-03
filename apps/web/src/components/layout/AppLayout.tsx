@@ -1,13 +1,31 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
+import { useAuthStore } from "@/stores/authStore";
+import { canUseZavoraLifeChatbot } from "@/lib/chatbot-guard";
 import { Header } from "./Header";
 import { MobileDrawer } from "./MobileDrawer";
 import { BottomNav } from "./BottomNav";
 import { AppSplashLoader } from "./AppSplashLoader";
 
+// Lazy-load FloatingChatbot only when authorized to optimize LCP and bundle size
+const FloatingChatbot = dynamic(
+  () => import("@/components/chatbot/FloatingChatbot").then((mod) => mod.FloatingChatbot),
+  { ssr: false }
+);
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const pathname = usePathname();
+  const { user } = useAuthStore();
+
+  // Enforce strict chatbot visibility rules:
+  // Guest on homepage / landing -> TRUE
+  // Authenticated Patient -> TRUE
+  // Doctors, Admins, Internal roles -> FALSE (Hidden & not loaded)
+  const isChatbotAllowed = canUseZavoraLifeChatbot(user, pathname);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col transition-colors">
@@ -18,6 +36,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <BottomNav />
+
+      {/* Floating Zavora Life AI Assistant with Like/Unlike Feedback */}
+      {isChatbotAllowed && <FloatingChatbot />}
     </div>
   );
 }

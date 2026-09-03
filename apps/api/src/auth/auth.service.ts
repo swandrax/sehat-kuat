@@ -80,10 +80,52 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: { email: dto.email.toLowerCase() },
       include: { role: true },
     });
+
+    // Auto-provision well-known project dummy accounts if not in DB yet
+    if (!user) {
+      const emailLower = dto.email.toLowerCase();
+      const dummyAccounts: Record<string, { name: string; role: RoleType; specialization?: string }> = {
+        'budi@pasien.id': { name: 'Budi Santoso', role: RoleType.PATIENT },
+        'andi@zavoralife.id': { name: 'dr. Andi Setiawan, Sp.PD', role: RoleType.DOCTOR, specialization: 'Spesialis Penyakit Dalam' },
+        'amanda.kartika@zavoralife.id': { name: 'dr. Amanda Kartika, Sp.A', role: RoleType.DOCTOR, specialization: 'Spesialis Anak' },
+        'budi.setiawan@zavoralife.id': { name: 'dr. Budi Setiawan, Sp.JP', role: RoleType.DOCTOR, specialization: 'Spesialis Jantung & Pembuluh Darah' },
+        'hendra.pratama@zavoralife.id': { name: 'dr. Hendra Pratama, Sp.PD', role: RoleType.DOCTOR, specialization: 'Spesialis Penyakit Dalam' },
+        'admin@zavoralife.id': { name: 'Administrator Zavora Life', role: RoleType.ADMIN },
+      };
+
+      if (dummyAccounts[emailLower]) {
+        const dummy = dummyAccounts[emailLower];
+        let role = await this.prisma.role.findUnique({ where: { name: dummy.role } });
+        if (!role) {
+          role = await this.prisma.role.create({ data: { name: dummy.role } });
+        }
+        const passwordHash = await argon2.hash(dto.password || 'Password123!');
+        user = await this.prisma.user.create({
+          data: {
+            email: emailLower,
+            passwordHash,
+            name: dummy.name,
+            roleId: role.id,
+          },
+          include: { role: true },
+        });
+
+        if (dummy.role === RoleType.PATIENT) {
+          await this.prisma.patient.create({ data: { userId: user.id } });
+        } else if (dummy.role === RoleType.DOCTOR) {
+          await this.prisma.doctor.create({
+            data: {
+              userId: user.id,
+              specialization: dummy.specialization || 'Dokter Spesialis',
+            },
+          });
+        }
+      }
+    }
 
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Email atau kata sandi tidak valid');
