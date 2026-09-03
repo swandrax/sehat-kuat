@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { HealthcareFacility, RouteAlgorithm } from "@/stores/facilitiesStore";
@@ -37,10 +37,16 @@ export default function FacilityMap({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
-  const routeLayerRef = useRef<L.Polyline | null>(null);
+  const trafficPolylinesRef = useRef<L.Polyline[]>([]);
   const routeBadgeRef = useRef<L.Marker | null>(null);
 
-  // 1. Initialize Leaflet Map
+  const [trafficSummary, setTrafficSummary] = useState<{
+    smoothKm: number;
+    moderateKm: number;
+    congestedKm: number;
+  } | null>(null);
+
+  // 1. Initialize Leaflet Map with OpenStreetMap tiles
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -51,12 +57,16 @@ export default function FacilityMap({
         zoomControl: false,
       });
 
-      // High-reliability OpenStreetMap tile layer (instant global load)
-      const osmTileLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-        subdomains: ["a", "b", "c"],
-      });
+      // Standard OSM Tile Layer (High reliability & immediate loading)
+      const osmTileLayer = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 19,
+          subdomains: ["a", "b", "c"],
+        }
+      );
       osmTileLayer.addTo(map);
 
       // Custom zoom control in bottom-right
@@ -65,12 +75,11 @@ export default function FacilityMap({
       mapInstanceRef.current = map;
       markersLayerRef.current = L.layerGroup().addTo(map);
 
-      // Trigger invalidateSize after slight delay to ensure container dimensions are computed
+      // Invalidate size once container is rendered
       setTimeout(() => {
         map.invalidateSize();
       }, 200);
 
-      // Resize observer to handle dynamic responsive layout changes
       const resizeObserver = new ResizeObserver(() => {
         map.invalidateSize();
       });
@@ -84,7 +93,7 @@ export default function FacilityMap({
     }
   }, []);
 
-  // 2. React to GPS location changes (e.g. when user clicks "Izinkan Lokasi")
+  // 2. React to GPS location changes (Pan & FlyTo location)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !userLocation?.latitude || !userLocation?.longitude) return;
@@ -106,7 +115,7 @@ export default function FacilityMap({
 
     markersLayerRef.current.clearLayers();
 
-    // User Location Marker (Pulse Dot)
+    // User Location Pulse Dot Marker
     const userIcon = L.divIcon({
       className: "custom-user-marker",
       html: `
@@ -127,7 +136,7 @@ export default function FacilityMap({
     }).addTo(markersLayerRef.current);
 
     userMarker.bindTooltip(
-      `<div class="text-xs font-bold text-slate-800">📍 Posisi Anda</div>`,
+      `<div class="text-xs font-bold text-slate-800">📍 Posisi Perangkat Anda</div>`,
       { permanent: false, direction: "top" }
     );
 
@@ -179,15 +188,18 @@ export default function FacilityMap({
     });
   }, [facilities, selectedFacility, userLocation]);
 
-  // 4. Update Route Polyline & Info Badge (Without exposing algorithm names to users)
+  // 4. Update Multi-Color Traffic Polyline:
+  // - Biru (#2563eb): Lancar
+  // - Kuning (#eab308): Ramai Lancar
+  // - Merah (#ef4444): Macet / Padat
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    if (routeLayerRef.current) {
-      map.removeLayer(routeLayerRef.current);
-      routeLayerRef.current = null;
-    }
+    // Clear existing traffic polylines
+    trafficPolylinesRef.current.forEach((poly) => map.removeLayer(poly));
+    trafficPolylinesRef.current = [];
+
     if (routeBadgeRef.current) {
       map.removeLayer(routeBadgeRef.current);
       routeBadgeRef.current = null;
@@ -201,7 +213,14 @@ export default function FacilityMap({
     fetch(routeUrl)
       .then((res) => res.json())
       .then((data) => {
-        const coords: [number, number][] =
+        const trafficSegments: Array<{
+          coordinates: [number, number][];
+          traffic: "SMOOTH" | "MODERATE" | "CONGESTED";
+          color: string;
+          label: string;
+        }> = data?.trafficSegments || [];
+
+        const allCoords: [number, number][] =
           data?.coordinates && data.coordinates.length > 0
             ? data.coordinates
             : [
@@ -209,24 +228,44 @@ export default function FacilityMap({
                 [selectedFacility.latitude, selectedFacility.longitude],
               ];
 
-        const isShortest = routeAlgorithm === "A_STAR";
-        const polyline = L.polyline(coords, {
-          color: isShortest ? "#059669" : "#0284c7",
-          weight: 5,
-          opacity: 0.9,
-          lineJoin: "round",
-          dashArray: isShortest ? undefined : "6, 8",
-        }).addTo(map);
+        setTrafficSummary(data?.trafficSummary || null);
 
-        routeLayerRef.current = polyline;
+        // Render multi-color segments if available
+        if (trafficSegments.length > 0) {
+          trafficSegments.forEach((seg) => {
+            const poly = L.polyline(seg.coordinates, {
+              color: seg.color, // Blue, Yellow, or Red
+              weight: 6,
+              opacity: 0.95,
+              lineCap: "round",
+              lineJoin: "round",
+            }).addTo(map);
 
-        const midIndex = Math.floor(coords.length / 2);
-        const midPoint = coords[midIndex] || [
+            poly.bindTooltip(
+              `<div class="text-[10px] font-bold">Lalu Lintas: ${seg.label}</div>`,
+              { sticky: true }
+            );
+
+            trafficPolylinesRef.current.push(poly);
+          });
+        } else {
+          // Fallback single line
+          const fallbackPoly = L.polyline(allCoords, {
+            color: "#2563eb",
+            weight: 6,
+            opacity: 0.9,
+          }).addTo(map);
+          trafficPolylinesRef.current.push(fallbackPoly);
+        }
+
+        // Add Midpoint Badge with distance & travel time
+        const midIndex = Math.floor(allCoords.length / 2);
+        const midPoint = allCoords[midIndex] || [
           (userLocation.latitude + selectedFacility.latitude) / 2,
           (userLocation.longitude + selectedFacility.longitude) / 2,
         ];
 
-        // Clean user-friendly label without internal algorithm names
+        const isShortest = routeAlgorithm === "A_STAR";
         const badgeText = `${
           isShortest ? "Rute Terpendek" : "Rute Tercepat"
         } • ${selectedFacility.distanceKm ?? 2.4} km • ${
@@ -236,20 +275,21 @@ export default function FacilityMap({
         const badgeIcon = L.divIcon({
           className: "route-badge",
           html: `
-            <div class="px-3 py-1.5 rounded-full ${
-              isShortest ? "bg-emerald-700" : "bg-sky-700"
-            } text-white text-[10px] font-bold shadow-md whitespace-nowrap border border-white/40 animate-in fade-in zoom-in duration-200">
-              ${badgeText}
+            <div class="px-3 py-1.5 rounded-full bg-slate-900/90 text-white text-[10px] font-bold shadow-md whitespace-nowrap border border-white/30 flex items-center gap-1.5 animate-in fade-in zoom-in duration-200">
+              <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+              <span>${badgeText}</span>
             </div>
           `,
-          iconSize: [200, 26],
-          iconAnchor: [100, 13],
+          iconSize: [220, 28],
+          iconAnchor: [110, 14],
         });
 
         const badgeMarker = L.marker(midPoint, { icon: badgeIcon }).addTo(map);
         routeBadgeRef.current = badgeMarker;
 
-        map.fitBounds(polyline.getBounds(), { padding: [60, 60], maxZoom: 16 });
+        // Auto zoom & pan bounds
+        const bounds = L.latLngBounds(allCoords);
+        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
       })
       .catch((e) => {
         console.error("Failed to load route:", e);
@@ -258,7 +298,7 @@ export default function FacilityMap({
 
   return (
     <div className="relative w-full h-[420px] lg:h-[540px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xs bg-slate-100 dark:bg-slate-800">
-      {/* Map Leaflet Container */}
+      {/* Leaflet Map Canvas */}
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
       {/* Floating Sort Dropdown (Top Right) */}
@@ -282,11 +322,28 @@ export default function FacilityMap({
         <button
           onClick={onRecenter}
           className="p-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md transition flex items-center gap-2 text-xs font-bold active:scale-95"
-          title="Pusatkan ke Lokasi Saya"
+          title="Pusatkan ke Posisi Saya"
         >
           <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
           <span>Pusatkan Lokasi</span>
         </button>
+      </div>
+
+      {/* Live Traffic Legend Badge (Bottom Right) */}
+      <div className="absolute bottom-4 right-14 z-400 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md flex items-center gap-2.5 text-[10px] font-bold">
+        <span className="text-slate-400 text-[9px] hidden sm:inline">Kondisi Jalan:</span>
+        <div className="flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+          <span className="text-slate-700 dark:text-slate-200">Lancar</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+          <span className="text-slate-700 dark:text-slate-200">Ramai Lancar</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-full bg-rose-600"></span>
+          <span className="text-slate-700 dark:text-slate-200">Macet</span>
+        </div>
       </div>
     </div>
   );

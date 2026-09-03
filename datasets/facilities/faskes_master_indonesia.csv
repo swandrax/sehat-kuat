@@ -1,0 +1,11 @@
+id,name,type,address,latitude,longitude,rating,reviewCount,operatingHours,isOpenNow,is24Hours,hasEmergency,phone,services
+fac-1,Klinik Zavora Life Pejuang,CLINIC,"Jl. Pejuang Raya No. 45, Medan Satria, Kota Bekasi",-6.1852,106.9841,4.6,128,"Buka • Tutup 21:00",true,false,false,"(021) 8892-1100","BPJS,Telemedicine,Parkir,Farmasi"
+fac-2,Puskesmas Harapan Baru,PUSKESMAS,"Jl. Harapan Baru Barat No. 12, Bekasi Barat",-6.2135,106.9752,4.3,76,"Buka • Tutup 15:00",true,false,false,"(021) 8844-3200","BPJS,Laboratorium,Parkir"
+fac-3,Apotek Zavora 24 Jam,PHARMACY,"Jl. Boulevard Hijau Blok B1 No. 5, Kota Harapan Indah",-6.1955,106.9928,4.7,92,"Buka 24 Jam",true,true,false,"(021) 8887-5544","Farmasi,Konsultasi Apoteker,Obat Lengkap,Parkir"
+fac-4,Lab Medika Utama Bekasi,LABORATORY,"Komp. Ruko Sentra Niaga Blok C-8, Kalibabang Pejuang",-6.1912,106.9785,4.4,53,"Buka • Tutup 17:00",true,false,false,"(021) 8896-7788","Laboratorium,Hasil Cepat,PCR / Darah,Parkir"
+fac-5,RS Citra Harapan,HOSPITAL,"Jl. Harapan Indah Raya No. 34, Medan Satria, Kota Bekasi",-6.1830,106.9890,4.8,310,"Buka 24 Jam",true,true,true,"(021) 8887-8888","IGD 24 Jam,BPJS,Rawat Inap,ICU,Ambulans"
+fac-6,RS Ananda Bekasi,HOSPITAL,"Jl. Sultan Agung No. 173, Medan Satria, Kota Bekasi",-6.2205,106.9780,4.5,240,"Buka 24 Jam",true,true,true,"(021) 8854-3333","IGD 24 Jam,BPJS,Rawat Inap,Radiologi,Ambulans"
+fac-7,Klinik Zavora Pratama Sudirman,CLINIC,"Jl. Jenderal Sudirman No. 45, Jakarta Pusat",-6.2088,106.8456,4.9,420,"Buka • Tutup 22:00",true,false,false,"(021) 555-1234","BPJS,Asuransi Swasta,Telemedicine,Farmasi,Parkir"
+fac-8,RSUPN Dr. Cipto Mangunkusumo (RSCM),HOSPITAL,"Jl. Diponegoro No. 71, Senen, Jakarta Pusat",-6.1970,106.8500,4.7,850,"Buka 24 Jam",true,true,true,"(021) 1500-135","IGD 24 Jam,BPJS,Spesialis Lengkap,ICU,Ambulans"
+fac-9,Apotek Kimia Farma Matraman,PHARMACY,"Jl. Matraman Raya No. 88, Jakarta Timur",-6.2045,106.8580,4.5,115,"Buka 24 Jam",true,true,false,"(021) 858-1234","Farmasi,Konsultasi Apoteker,Parkir"
+fac-10,Laboratorium Klinik Prodia Salemba,LABORATORY,"Jl. Salemba Raya No. 40, Jakarta Pusat",-6.1950,106.8520,4.8,190,"Buka • Tutup 20:00",true,false,false,"(021) 314-4182","Laboratorium,Medical Check Up,Hasil Cepat,Parkir"

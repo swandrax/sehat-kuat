@@ -1,0 +1,5 @@
+conversation_id,message_id,prompt_version,model_version,user_feedback,review_status,patient_role,clinical_accuracy,review_notes
+conv-001,msg-101,v1.2-clinical,claude-3.5-sonnet,LIKE,TRAINING_ELIGIBLE,PATIENT,1.0,"Penjelasan triase influenza jelas dan menyarankan hidrasi"
+conv-002,msg-102,v1.2-clinical,claude-3.5-sonnet,LIKE,TRAINING_ELIGIBLE,PATIENT,0.95,"Rekomendasi faskes terdekat dengan IGD tepat"
+conv-003,msg-103,v1.2-clinical,claude-3.5-sonnet,UNLIKE,NEEDS_REVIEW,PATIENT,0.60,"Dosis obat perlu disclaimer resep dokter yang lebih tegas"
+conv-004,msg-104,v1.2-clinical,claude-3.5-sonnet,LIKE,TRAINING_ELIGIBLE,PATIENT,1.0,"Skrining gejala hipertensi terstruktur SOAP dengan baik"

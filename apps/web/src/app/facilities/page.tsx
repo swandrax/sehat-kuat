@@ -120,30 +120,100 @@ export default function FacilitiesPage() {
   const selectedFacility =
     facilities.find((f) => f.id === selectedFacilityId) || facilities[0] || null;
 
-  // Handle GPS location
+  // Fast & Precise Device Location Resolver (High accuracy GPS -> Network Triangulation -> Reverse Geocoding)
   const handleUseCurrentLocation = () => {
-    if (!("geolocation" in navigator)) {
-      toast.error("Geolokasi tidak didukung oleh browser Anda");
-      return;
-    }
+    toast.loading("Mendeteksi lokasi perangkat presisi...", { id: "gps-fetch" });
 
-    toast.info("Mengambil koordinat GPS presisi...");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setUserLocation({
-          latitude,
-          longitude,
-          address: "Posisi GPS Saya (Presisi Aktif)",
-        });
-        toast.success("Lokasi GPS berhasil diperbarui!");
-      },
-      (err) => {
-        toast.error("Gagal mendapatkan lokasi GPS: " + err.message);
-      },
-      { enableHighAccuracy: true }
-    );
+    const resolveAddressAndSet = async (lat: number, lng: number, source: string) => {
+      let resolvedAddress = `Koordinat (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`,
+          { headers: { "Accept-Language": "id" }, signal: AbortSignal.timeout(3500) }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.address) {
+            const addr = data.address;
+            const street = addr.road || addr.suburb || addr.neighbourhood || addr.village || "";
+            const city = addr.city || addr.town || addr.city_district || addr.county || "Wilayah Anda";
+            const state = addr.state || "";
+            resolvedAddress = [street, city, state].filter(Boolean).slice(0, 3).join(", ");
+          } else if (data?.display_name) {
+            resolvedAddress = data.display_name.split(", ").slice(0, 3).join(", ");
+          }
+        }
+      } catch {
+        // Graceful fallback to coordinate label
+      }
+
+      setUserLocation({
+        latitude: lat,
+        longitude: lng,
+        address: resolvedAddress,
+      });
+
+      toast.success(`Lokasi terdeteksi: ${resolvedAddress}`, { id: "gps-fetch" });
+    };
+
+    // Fallback using IP geolocation if hardware GPS is unavailable or blocked on localhost
+    const fallbackToIP = async () => {
+      try {
+        const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.latitude && data.longitude) {
+            const cityName = `${data.city || "Kota Anda"}, ${data.region || data.country_name || ""}`;
+            setUserLocation({
+              latitude: data.latitude,
+              longitude: data.longitude,
+              address: cityName,
+            });
+            toast.success(`Lokasi terdeteksi (Jaringan): ${cityName}`, { id: "gps-fetch" });
+            return;
+          }
+        }
+      } catch {}
+      toast.error("Tidak dapat mendeteksi lokasi otomatis. Silakan izinkan sensor lokasi browser.", { id: "gps-fetch" });
+    };
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          resolveAddressAndSet(pos.coords.latitude, pos.coords.longitude, "GPS");
+        },
+        (err) => {
+          // If high accuracy times out on desktop localhost, retry with low-accuracy or IP
+          navigator.geolocation.getCurrentPosition(
+            (pos2) => {
+              resolveAddressAndSet(pos2.coords.latitude, pos2.coords.longitude, "Triangulation");
+            },
+            () => {
+              fallbackToIP();
+            },
+            { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
+          );
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
+      );
+    } else {
+      fallbackToIP();
+    }
   };
+
+  // Auto detect device location on initial page load if still default
+  useEffect(() => {
+    if ("geolocation" in navigator && userLocation.address.includes("Kalibabang")) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          handleUseCurrentLocation();
+        },
+        () => {},
+        { timeout: 3000, maximumAge: 60000 }
+      );
+    }
+  }, []);
 
   // Facility Types Grid Configuration
   const facilityTypes: {

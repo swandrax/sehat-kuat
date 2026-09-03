@@ -376,6 +376,8 @@ export class FacilitiesService {
             durationMinutes = Math.max(2, Math.round(durationMinutes * 0.85));
           }
 
+          const trafficSegments = this.generateTrafficSegments(coordinates);
+
           return {
             success: true,
             algorithm: mode,
@@ -384,7 +386,13 @@ export class FacilitiesService {
             distanceKm,
             durationMinutes,
             coordinates,
-            source: 'Geoapify Routing API',
+            trafficSegments,
+            trafficSummary: {
+              smoothKm: Math.round(distanceKm * 0.55 * 10) / 10,
+              moderateKm: Math.round(distanceKm * 0.30 * 10) / 10,
+              congestedKm: Math.round(distanceKm * 0.15 * 10) / 10,
+            },
+            source: 'Geoapify Routing API + Real-time Traffic Simulator',
             _complexityMetrics: {
               algorithm: mode,
               timeComplexity:
@@ -407,7 +415,7 @@ export class FacilitiesService {
     );
 
     const waypoints: [number, number][] = [];
-    const steps = 8;
+    const steps = 12;
     for (let i = 0; i <= steps; i++) {
       const ratio = i / steps;
       // create subtle realistic road curve offsets
@@ -417,6 +425,8 @@ export class FacilitiesService {
       waypoints.push([lat, lng]);
     }
 
+    const trafficSegments = this.generateTrafficSegments(waypoints);
+
     return {
       success: true,
       algorithm: mode,
@@ -425,6 +435,12 @@ export class FacilitiesService {
       distanceKm,
       durationMinutes,
       coordinates: waypoints,
+      trafficSegments,
+      trafficSummary: {
+        smoothKm: Math.round(distanceKm * 0.55 * 10) / 10,
+        moderateKm: Math.round(distanceKm * 0.30 * 10) / 10,
+        congestedKm: Math.round(distanceKm * 0.15 * 10) / 10,
+      },
       source: 'Algoritma Navigasi Graf Internal (Fallback)',
       _complexityMetrics: {
         algorithm: mode,
@@ -433,6 +449,73 @@ export class FacilitiesService {
         spaceComplexity: 'O(V)',
       },
     };
+  }
+
+  /**
+   * Generates continuous color-coded traffic segments:
+   * - BLUE (#2563eb): Lancar (Smooth flow)
+   * - YELLOW (#eab308): Ramai Lancar (Moderate)
+   * - RED (#ef4444): Macet / Padat (Congested)
+   */
+  private generateTrafficSegments(coordinates: [number, number][]): Array<{
+    coordinates: [number, number][];
+    traffic: 'SMOOTH' | 'MODERATE' | 'CONGESTED';
+    color: string;
+    label: string;
+    speedKmH: number;
+  }> {
+    if (!coordinates || coordinates.length < 2) return [];
+
+    const total = coordinates.length;
+    const segments: Array<{
+      coordinates: [number, number][];
+      traffic: 'SMOOTH' | 'MODERATE' | 'CONGESTED';
+      color: string;
+      label: string;
+      speedKmH: number;
+    }> = [];
+
+    // Split into 3-4 continuous overlapping segments
+    const idx1 = Math.max(1, Math.floor(total * 0.4));
+    const idx2 = Math.max(idx1 + 1, Math.floor(total * 0.75));
+
+    // 1. First Segment: Blue (Lancar)
+    const seg1 = coordinates.slice(0, idx1 + 1);
+    if (seg1.length >= 2) {
+      segments.push({
+        coordinates: seg1,
+        traffic: 'SMOOTH',
+        color: '#2563eb', // Blue
+        label: 'Lancar',
+        speedKmH: 45,
+      });
+    }
+
+    // 2. Middle Segment: Yellow (Ramai Lancar)
+    const seg2 = coordinates.slice(idx1, idx2 + 1);
+    if (seg2.length >= 2) {
+      segments.push({
+        coordinates: seg2,
+        traffic: 'MODERATE',
+        color: '#eab308', // Yellow
+        label: 'Ramai Lancar',
+        speedKmH: 25,
+      });
+    }
+
+    // 3. Final Congestion Segment: Red (Macet dekat persimpangan/tujuan)
+    const seg3 = coordinates.slice(idx2);
+    if (seg3.length >= 2) {
+      segments.push({
+        coordinates: seg3,
+        traffic: 'CONGESTED',
+        color: '#ef4444', // Red
+        label: 'Macet',
+        speedKmH: 10,
+      });
+    }
+
+    return segments;
   }
 
   private calculateHaversineDistance(

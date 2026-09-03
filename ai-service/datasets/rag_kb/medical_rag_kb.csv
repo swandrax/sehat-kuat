@@ -1,0 +1,6 @@
+topic_id,category,symptom_keywords,icd10_code,recommended_action,emergency_flag,guideline_source
+RAG-001,Kardiovaskular,"nyeri dada, sesak nafas, keringat dingin",I20.9,"Segera menuju IGD RS terdekat dengan fasilitas kardiologi",true,"Pedoman Tatalaksana Sindrom Koroner Akut PERKI"
+RAG-002,Pediatri,"demam tinggi anak, kejang demam, lemas",R56.0,"Kompres hangat, pantau tanda vital, bawa ke dokter spesialis anak",true,"Panduan Pelayanan Klinis IDAI"
+RAG-003,Penyakit Dalam,"sering haus, sering buang air kecil, lemas",E11.9,"Pemeriksaan GDS/HbA1c rutin, konsultasi dokter Sp.PD",false,"Konsensus Pengelolaan Diabetes Melitus Tipe 2 PERKENI"
+RAG-004,Pernafasan,"batuk berdahak >2 minggu, demam malam, berat badan turun",A15.0,"Skrining TCM/BTA di Puskesmas atau RS rujukan",false,"Petunjuk Teknis Penanggulangan Tuberkulosis Kemenkes RI"
+RAG-005,Gastroenterohepatologi,"nyeri ulu hati, mual, perut kembung",K29.7,"Hindari pemicu asam lambung, antasida bila perlu, konsultasi dokter",false,"Konsensus Nasional Dispepsia PGI"
