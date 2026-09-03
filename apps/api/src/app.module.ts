@@ -20,6 +20,7 @@ import { ChatModule } from './chat/chat.module';
 import { AIModule } from './ai/ai.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { ConsultationsModule } from './consultations/consultations.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ConsultationsModule } from './consultations/consultations.module';
     PrismaModule,
     EventsModule,
     AuthModule,
+    AuditModule,
     UsersModule,
     PatientsModule,
     DoctorsModule,

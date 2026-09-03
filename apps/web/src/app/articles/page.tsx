@@ -3,6 +3,8 @@
 import { ArrowLeft, Search, BookOpen, Clock, Tag } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { BottomNav } from "@/components/layout/BottomNav";
+
 export default function ArticlesPage() {
   const router = useRouter();
 
@@ -36,7 +38,7 @@ export default function ArticlesPage() {
   ];
 
   return (
-    <div className="p-4 space-y-6 pb-24 bg-gray-50 min-h-screen">
+    <div className="p-4 space-y-6 pb-24 bg-gray-50 min-h-screen max-w-md mx-auto relative">
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
@@ -107,6 +109,8 @@ export default function ArticlesPage() {
           </div>
         ))}
       </div>
+
+      <BottomNav />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAppointmentDto, UpdateAppointmentDto } from './dto/appointment.dto';
@@ -60,7 +61,7 @@ export class AppointmentsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user?: any) {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
       include: {
@@ -77,10 +78,30 @@ export class AppointmentsService {
       throw new NotFoundException('Janji temu tidak ditemukan');
     }
 
+    if (user?.role === 'PATIENT' && appointment.patient.userId !== user.sub) {
+      throw new ForbiddenException('Akses ditolak ke janji temu ini');
+    }
+
+    if (user?.role === 'DOCTOR' && appointment.doctor.userId !== user.sub) {
+      throw new ForbiddenException('Akses ditolak ke janji temu ini');
+    }
+
     return appointment;
   }
 
-  async create(dto: CreateAppointmentDto) {
+  async create(dto: CreateAppointmentDto, user?: any) {
+    // If patient is creating, auto-bind patient ID to their own account
+    let patientId = dto.patientId;
+    if (user?.role === 'PATIENT') {
+      const patient = await this.prisma.patient.findUnique({
+        where: { userId: user.sub },
+      });
+      if (!patient) {
+        throw new BadRequestException('Profil pasien belum lengkap');
+      }
+      patientId = patient.id;
+    }
+
     const aptDate = new Date(dto.appointmentDate);
 
     // Concurrency safe transaction: check double booking & create appointment + queue
@@ -102,7 +123,7 @@ export class AppointmentsService {
       // 2. Create appointment
       const appointment = await tx.appointment.create({
         data: {
-          patientId: dto.patientId,
+          patientId: patientId,
           doctorId: dto.doctorId,
           clinicId: dto.clinicId,
           scheduleId: dto.scheduleId,
@@ -114,8 +135,8 @@ export class AppointmentsService {
       });
 
       // 3. Concurrency-safe queue number generation for this doctor and date
-      const startOfDay = new Date(aptDate.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(aptDate.setHours(23, 59, 59, 999));
+      const startOfDay = new Date(new Date(aptDate).setHours(0, 0, 0, 0));
+      const endOfDay = new Date(new Date(aptDate).setHours(23, 59, 59, 999));
 
       const lastQueue = await tx.queue.findFirst({
         where: {
@@ -131,7 +152,7 @@ export class AppointmentsService {
         data: {
           clinicId: dto.clinicId,
           doctorId: dto.doctorId,
-          patientId: dto.patientId,
+          patientId: patientId,
           appointmentId: appointment.id,
           queueNumber: nextQueueNumber,
           date: new Date(),
@@ -141,7 +162,7 @@ export class AppointmentsService {
 
       // 4. Create Notification
       const patient = await tx.patient.findUnique({
-        where: { id: dto.patientId },
+        where: { id: patientId },
         select: { userId: true },
       });
 
@@ -156,6 +177,18 @@ export class AppointmentsService {
         });
       }
 
+      // 5. Record Audit Log
+      if (user?.sub) {
+        await tx.auditLog.create({
+          data: {
+            userId: user.sub,
+            action: 'APPOINTMENT_CREATED',
+            resource: 'Appointment',
+            details: { appointmentId: appointment.id, doctorId: dto.doctorId, patientId },
+          },
+        });
+      }
+
       return {
         ...appointment,
         queue,
@@ -163,10 +196,10 @@ export class AppointmentsService {
     });
   }
 
-  async update(id: string, dto: UpdateAppointmentDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateAppointmentDto, user?: any) {
+    const existing = await this.findOne(id, user);
 
-    return this.prisma.appointment.update({
+    const updated = await this.prisma.appointment.update({
       where: { id },
       data: {
         status: dto.status,
@@ -180,10 +213,23 @@ export class AppointmentsService {
         queue: true,
       },
     });
+
+    if (user?.sub) {
+      await this.prisma.auditLog.create({
+        data: {
+          userId: user.sub,
+          action: 'APPOINTMENT_UPDATED',
+          resource: 'Appointment',
+          details: { appointmentId: id, status: dto.status },
+        },
+      });
+    }
+
+    return updated;
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, user?: any) {
+    await this.findOne(id, user);
     return this.prisma.appointment.delete({
       where: { id },
     });

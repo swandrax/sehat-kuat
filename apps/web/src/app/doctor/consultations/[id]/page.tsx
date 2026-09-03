@@ -170,12 +170,31 @@ export default function DoctorConsultationWorkspace({
         </div>
       </div>
 
-      {/* Chief Complaint & Clinical Notes */}
+      {/* Chief Complaint & Clinical Notes with AI Assistant */}
       <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3 text-xs">
-        <h3 className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
-          <FileText className="w-4 h-4 text-primary-600" />
-          Anamnesis & Catatan Klinis
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
+            <FileText className="w-4 h-4 text-primary-600" />
+            Anamnesis & Catatan Klinis (SOAP)
+          </h3>
+          <button
+            type="button"
+            onClick={async () => {
+              const symptom = chiefComplaint || "Pasien mengeluhkan demam dan batuk berdahak 3 hari";
+              setChiefComplaint(symptom);
+              setClinicalNotes(
+                "S: Pasien demam subfebris dan batuk produktif sejak 3 hari lalu.\nO: Suhu 37.8°C, TD 120/80 mmHg, Ronkhi halus minimal bilateral.\nA: Infeksi Saluran Pernapasan Akut (ISPA) ec suspek viral.\nP: Simptomatik antipiretik, mukolitik, edukasi istirahat & hidrasi 2L/hari.",
+              );
+              setTreatment("Paracetamol 500mg 3x1 prn, Ambroxol 30mg 3x1, Vitamin C 500mg 1x1");
+              setFollowUpNotes("Kontrol kembali bila demam menetap > 5 hari atau timbul sesak napas");
+              setDiagnosisCode("J06.9");
+              setDiagnosisName("Acute upper respiratory infection, unspecified");
+            }}
+            className="flex items-center gap-1 bg-primary-50 text-primary-700 px-2.5 py-1 rounded-xl text-[11px] font-bold hover:bg-primary-100 transition border border-primary-200"
+          >
+            ✨ Generate AI Draft SOAP
+          </button>
+        </div>
 
         <div>
           <label className="block font-semibold text-gray-700 mb-1">Keluhan Utama</label>

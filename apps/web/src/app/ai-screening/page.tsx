@@ -164,6 +164,45 @@ function AIScreeningContent() {
 
           </div>
         ))}
+        {/* Quick Suggestion Chips */}
+        {messages.length <= 2 && !isStreaming && (
+          <div className="pt-2">
+            <p className="text-[11px] font-semibold text-gray-400 mb-2">Contoh keluhan yang sering ditanyakan:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                "Demam dan flu 3 hari",
+                "Nyeri ulu hati & mual",
+                "Pusing berputar (vertigo)",
+                "Ruam gatal di kulit",
+              ].map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => setInput(chip)}
+                  className="px-3 py-1 bg-white border border-gray-200 hover:border-primary-400 hover:text-primary-600 rounded-full text-xs text-gray-600 transition shadow-xs"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {messages.length > 2 && !isStreaming && (
+          <div className="bg-primary-50 p-3.5 rounded-2xl border border-primary-100 flex items-center justify-between animate-in fade-in">
+            <div>
+              <p className="text-xs font-bold text-primary-900">Ingin penanganan lebih lanjut?</p>
+              <p className="text-[10px] text-primary-700">Buat janji temu dengan dokter spesialis kami</p>
+            </div>
+            <button
+              onClick={() => router.push("/appointments/new")}
+              className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl text-xs transition shadow-xs"
+            >
+              Buat Janji Temu
+            </button>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -176,7 +215,7 @@ function AIScreeningContent() {
             onChange={(e) => setInput(e.target.value)}
             disabled={isStreaming}
             placeholder="Tulis gejala atau keluhan Anda..."
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all disabled:opacity-50"
+            className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-5 py-3 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all disabled:opacity-50"
           />
           <button 
             type="submit"

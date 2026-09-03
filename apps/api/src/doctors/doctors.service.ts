@@ -13,14 +13,39 @@ export class DoctorsService {
     const limit = pagination.limit || 20;
     const skip = (page - 1) * limit;
 
-    const where = pagination.search
-      ? {
-          OR: [
-            { specialization: { contains: pagination.search, mode: 'insensitive' as const } },
-            { user: { name: { contains: pagination.search, mode: 'insensitive' as const } } },
-          ],
-        }
-      : {};
+    const andConditions: any[] = [];
+
+    if (pagination.search) {
+      andConditions.push({
+        OR: [
+          { specialization: { contains: pagination.search, mode: 'insensitive' as const } },
+          { user: { name: { contains: pagination.search, mode: 'insensitive' as const } } },
+          { clinic: { name: { contains: pagination.search, mode: 'insensitive' as const } } },
+        ],
+      });
+    }
+
+    if (pagination.letter) {
+      andConditions.push({
+        user: {
+          name: {
+            startsWith: pagination.letter.trim(),
+            mode: 'insensitive' as const,
+          },
+        },
+      });
+    }
+
+    const where: any = andConditions.length > 0 ? { AND: andConditions } : {};
+
+    const orderBy: any = {};
+    if (pagination.sortBy === 'name') {
+      orderBy.user = { name: pagination.order || 'asc' };
+    } else if (pagination.sortBy === 'specialization') {
+      orderBy.specialization = pagination.order || 'asc';
+    } else {
+      orderBy.createdAt = pagination.order || 'desc';
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.doctor.findMany({
@@ -34,7 +59,7 @@ export class DoctorsService {
           clinic: true,
           schedules: { where: { isActive: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
       this.prisma.doctor.count({ where }),
     ]);

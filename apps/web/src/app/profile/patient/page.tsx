@@ -1,115 +1,155 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { User, MapPin, Activity, Calendar, Droplet, Phone, LogOut, ShieldCheck, ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  User,
+  ShieldCheck,
+  X,
+  LogOut,
+  Lock,
+  Key,
+  Users,
+  MessageSquare,
+  CreditCard,
+  Info,
+  FileText,
+  PhoneCall,
+} from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { BottomNav } from "@/components/layout/BottomNav";
 
 export default function PatientProfilePage() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const router = useRouter();
+  const [showInsuranceBanner, setShowInsuranceBanner] = useState(true);
 
-  useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
-
-  const { data: profileResponse, isLoading } = useQuery({
-    queryKey: ["patientProfile"],
-    queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patients/profile`, {
-        // In a real app with cookies, we'd add credentials: 'include'
-      });
-      if (!res.ok) throw new Error("Failed to fetch profile");
-      return res.json();
-    },
-    enabled: isAuthenticated && user?.role === "PATIENT",
-  });
-
-  const profile = profileResponse?.data;
-
-  if (isLoading) return <div className="p-6 text-center text-primary-600 animate-pulse">Memuat data profil...</div>;
+  const userName = user?.name || "Swandaru Tirta Sandhika";
+  const userPhone = user?.phone || "0877-8238-0077";
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col pb-20">
-      {/* Header */}
-      <div className="bg-primary-600 text-white p-4 flex items-center shadow-md rounded-b-3xl">
-        <button onClick={() => router.back()} className="p-2 hover:bg-primary-500 rounded-full transition">
-          <ArrowLeft className="w-5 h-5" />
+    <div className="min-h-screen bg-gray-100 pb-28 max-w-md mx-auto relative font-sans">
+      {/* Top Header */}
+      <div className="bg-white px-4 py-4 border-b border-gray-200 flex items-center gap-4 sticky top-0 z-20 shadow-2xs">
+        <button
+          onClick={() => router.back()}
+          className="text-gray-700 hover:text-gray-900 transition"
+        >
+          <ArrowLeft className="w-6 h-6" />
         </button>
-        <div className="ml-4 flex-1">
-          <h1 className="text-xl font-bold">KlinikSehat</h1>
-          <p className="text-xs text-primary-100">Profil Pasien</p>
-        </div>
-        <ShieldCheck className="w-6 h-6 text-primary-200" />
+        <h1 className="text-lg font-bold text-gray-900">Profil</h1>
       </div>
 
-      <div className="p-4 space-y-6 mt-4">
-        {/* Profile Card */}
-        <div className="flex items-center gap-4 bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary-400 to-primary-600 rounded-2xl flex items-center justify-center text-white shadow-inner">
-            <User className="w-8 h-8" />
+      {/* User Info Header Card */}
+      <div className="bg-white p-5 flex items-center gap-4 border-b border-gray-200">
+        <div className="w-16 h-16 rounded-full bg-red-600 border-2 border-white shadow-md flex items-center justify-center text-white font-bold text-2xl shrink-0 overflow-hidden">
+          S
+        </div>
+        <div>
+          <h2 className="text-base font-bold text-gray-900 leading-tight">{userName}</h2>
+          <p className="text-xs text-gray-500 font-medium mt-1">{userPhone}</p>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-4">
+        {/* Section 1: Akun */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-2xs">
+          <div className="px-4 py-3 bg-gray-50/70 border-b border-gray-100">
+            <h3 className="text-xs font-bold text-gray-700">Akun</h3>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-800">{profile?.user?.email || user?.email}</h2>
-            <div className="inline-block mt-1 px-2.5 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase tracking-wider">
-              Pasien Terverifikasi
+          <div className="divide-y divide-gray-100">
+            <ProfileMenuItem icon={<User className="w-4 h-4 text-gray-500" />} label="Profil Saya" />
+            <ProfileMenuItem icon={<Users className="w-4 h-4 text-gray-500" />} label="Keluarga Saya" />
+            <ProfileMenuItem icon={<MessageSquare className="w-4 h-4 text-gray-500" />} label="Topik Saya" />
+            <ProfileMenuItem icon={<Lock className="w-4 h-4 text-gray-500" />} label="Ubah Kata Sandi" />
+            <ProfileMenuItem icon={<Key className="w-4 h-4 text-gray-500" />} label="Ubah PIN KlinikSehat" />
+          </div>
+        </div>
+
+        {/* Section 2: Sambungkan Asuransi */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-2xs">
+          <div className="px-4 py-3 bg-gray-50/70 border-b border-gray-100">
+            <h3 className="text-xs font-bold text-gray-700">Sambungkan Asuransi</h3>
+          </div>
+
+          {/* Insurance Banner */}
+          {showInsuranceBanner && (
+            <div className="bg-blue-600 text-white p-3.5 flex items-start justify-between gap-2 text-xs">
+              <span className="font-medium leading-tight">
+                Pilih dan sambungkan asuransi Anda dengan KlinikSehat di sini.
+              </span>
+              <button
+                onClick={() => setShowInsuranceBanner(false)}
+                className="text-white/80 hover:text-white p-0.5"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
+          )}
+
+          <div className="divide-y divide-gray-100">
+            <ProfileMenuItem icon={<ShieldCheck className="w-4 h-4 text-blue-600" />} label="KlinikSehat Proteksi Corporate" />
+            <ProfileMenuItem icon={<ShieldCheck className="w-4 h-4 text-blue-600" />} label="Admedika" />
+            <ProfileMenuItem icon={<ShieldCheck className="w-4 h-4 text-blue-600" />} label="Fullerton" />
           </div>
         </div>
 
-        {/* Information Cards */}
-        <section className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-5 py-4 bg-gray-50 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-700 text-sm">Informasi Medis Dasar</h3>
+        {/* Section 3: Aktivitas Saya */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-2xs">
+          <div className="px-4 py-3 bg-gray-50/70 border-b border-gray-100">
+            <h3 className="text-xs font-bold text-gray-700">Aktivitas Saya</h3>
           </div>
-          <div className="divide-y divide-gray-50">
-            <ProfileRow icon={<Droplet className="w-5 h-5 text-red-500" />} label="Golongan Darah" value={profile?.bloodType || "Belum diatur"} />
-            <ProfileRow icon={<Calendar className="w-5 h-5 text-blue-500" />} label="Tanggal Lahir" value={profile?.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('id-ID') : "Belum diatur"} />
-            <ProfileRow icon={<Activity className="w-5 h-5 text-green-500" />} label="Jenis Kelamin" value={profile?.gender || "Belum diatur"} />
+          <div className="divide-y divide-gray-100">
+            <ProfileMenuItem icon={<CreditCard className="w-4 h-4 text-gray-500" />} label="Transaksi Saya" />
           </div>
-        </section>
+        </div>
 
-        <section className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-5 py-4 bg-gray-50 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-700 text-sm">Kontak & Lokasi</h3>
+        {/* Section 4: Aplikasi KlinikSehat */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-2xs">
+          <div className="px-4 py-3 bg-gray-50/70 border-b border-gray-100">
+            <h3 className="text-xs font-bold text-gray-700">Aplikasi KlinikSehat</h3>
           </div>
-          <div className="divide-y divide-gray-50">
-            <ProfileRow icon={<Phone className="w-5 h-5 text-gray-400" />} label="Nomor Telepon" value={profile?.phone || "Belum diatur"} />
-            <ProfileRow icon={<MapPin className="w-5 h-5 text-gray-400" />} label="Alamat" value={profile?.address || "Belum diatur"} />
+          <div className="divide-y divide-gray-100">
+            <ProfileMenuItem icon={<Info className="w-4 h-4 text-gray-500" />} label="Tentang Kami" />
+            <ProfileMenuItem icon={<Lock className="w-4 h-4 text-gray-500" />} label="Privasi" />
+            <ProfileMenuItem icon={<FileText className="w-4 h-4 text-gray-500" />} label="Syarat & Ketentuan" />
+            <ProfileMenuItem icon={<PhoneCall className="w-4 h-4 text-gray-500" />} label="Hubungi Kami" />
           </div>
-        </section>
+        </div>
 
-        <div className="flex flex-col gap-3 pt-2">
-          <button className="w-full bg-primary-50 text-primary-600 font-semibold py-3.5 rounded-xl hover:bg-primary-100 transition-colors shadow-sm">
-            Edit Profil
-          </button>
-          
-          <button 
-            onClick={() => {
-              logout();
-              router.push("/login");
-            }}
-            className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 font-semibold py-3.5 rounded-xl hover:bg-red-100 transition-colors shadow-sm"
-          >
-            <LogOut className="w-4 h-4" /> Keluar
-          </button>
+        {/* Section 5: Keluar Button */}
+        <button
+          onClick={() => {
+            logout();
+            router.push("/login");
+          }}
+          className="w-full bg-white border border-gray-200 text-gray-800 font-bold p-4 rounded-2xl flex items-center justify-between hover:bg-red-50 hover:text-red-600 transition shadow-2xs"
+        >
+          <span className="text-sm">Keluar</span>
+          <LogOut className="w-5 h-5 text-gray-500" />
+        </button>
+
+        {/* Footer Version */}
+        <div className="text-center pt-2 text-[11px] text-gray-400 font-medium">
+          Versi 8.8.2 - 162
         </div>
       </div>
+
+      <BottomNav />
     </div>
   );
 }
 
-function ProfileRow({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
+function ProfileMenuItem({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <div className="flex items-center justify-between p-5">
-      <div className="flex items-center gap-4">
-        <div className="p-2 bg-gray-50 rounded-lg">
-          {icon}
-        </div>
-        <span className="text-sm text-gray-600 font-medium">{label}</span>
+    <div className="flex items-center justify-between p-3.5 hover:bg-gray-50 cursor-pointer transition">
+      <div className="flex items-center gap-3">
+        {icon}
+        <span className="text-xs font-semibold text-gray-800">{label}</span>
       </div>
-      <span className="text-sm font-bold text-gray-800">{value}</span>
+      <ChevronRight className="w-4 h-4 text-gray-400" />
     </div>
   );
 }

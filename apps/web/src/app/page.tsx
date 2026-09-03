@@ -18,10 +18,26 @@ export default function Home() {
       <section>
         <div className="grid grid-cols-4 gap-4">
           <ServiceIcon icon={<Stethoscope />} label="Cari Dokter" href="/doctors" color="bg-blue-100 text-blue-600" />
-          <ServiceIcon icon={<Calendar />} label="Buat Janji" href="/appointments/new" color="bg-teal-100 text-teal-600" />
+          <ServiceIcon icon={<Calendar />} label="Janji Temu" href="/appointments" color="bg-teal-100 text-teal-600" />
           <ServiceIcon icon={<MessageCircle />} label="Chat Dokter" href="/chat" color="bg-purple-100 text-purple-600" />
           <ServiceIcon icon={<FileText />} label="Rekam Medis" href="/records" color="bg-orange-100 text-orange-600" />
         </div>
+      </section>
+
+      {/* Role Portal Quick Access */}
+      <section className="bg-gray-100/80 p-3 rounded-2xl flex items-center justify-between gap-2">
+        <Link
+          href="/doctor"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-white border border-gray-200 hover:border-primary-400 text-gray-800 rounded-xl text-xs font-bold transition shadow-2xs"
+        >
+          <Stethoscope className="w-3.5 h-3.5 text-primary-600" /> Portal Dokter
+        </Link>
+        <Link
+          href="/admin"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-white border border-gray-200 hover:border-indigo-400 text-gray-800 rounded-xl text-xs font-bold transition shadow-2xs"
+        >
+          <span className="w-2 h-2 rounded-full bg-indigo-500"></span> Admin Center
+        </Link>
       </section>
 
       {/* Secondary Services */}

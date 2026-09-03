@@ -29,25 +29,29 @@ export class AppointmentsController {
 
   @Get(':id')
   @Roles('ADMIN', 'STAFF', 'DOCTOR', 'PATIENT')
-  findOne(@Param('id') id: string) {
-    return this.appointmentsService.findOne(id);
+  findOne(@Param('id') id: string, @Request() req: any) {
+    return this.appointmentsService.findOne(id, req.user);
   }
 
   @Post()
   @Roles('ADMIN', 'STAFF', 'PATIENT')
-  create(@Body() dto: CreateAppointmentDto) {
-    return this.appointmentsService.create(dto);
+  create(@Body() dto: CreateAppointmentDto, @Request() req: any) {
+    return this.appointmentsService.create(dto, req.user);
   }
 
   @Patch(':id')
   @Roles('ADMIN', 'STAFF', 'DOCTOR', 'PATIENT')
-  update(@Param('id') id: string, @Body() dto: UpdateAppointmentDto) {
-    return this.appointmentsService.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateAppointmentDto,
+    @Request() req: any,
+  ) {
+    return this.appointmentsService.update(id, dto, req.user);
   }
 
   @Delete(':id')
   @Roles('ADMIN', 'STAFF')
-  remove(@Param('id') id: string) {
-    return this.appointmentsService.remove(id);
+  remove(@Param('id') id: string, @Request() req: any) {
+    return this.appointmentsService.remove(id, req.user);
   }
 }

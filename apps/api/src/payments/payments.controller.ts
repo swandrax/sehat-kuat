@@ -28,19 +28,19 @@ export class PaymentsController {
 
   @Get(':id')
   @Roles('ADMIN', 'STAFF', 'PATIENT')
-  findOne(@Param('id') id: string) {
-    return this.paymentsService.findOne(id);
+  findOne(@Param('id') id: string, @Request() req: any) {
+    return this.paymentsService.findOne(id, req.user);
   }
 
   @Post()
   @Roles('ADMIN', 'STAFF', 'PATIENT')
-  create(@Body() dto: CreatePaymentDto) {
-    return this.paymentsService.create(dto);
+  create(@Body() dto: CreatePaymentDto, @Request() req: any) {
+    return this.paymentsService.create(dto, req.user);
   }
 
   @Patch(':id')
   @Roles('ADMIN', 'STAFF')
-  update(@Param('id') id: string, @Body() dto: UpdatePaymentDto) {
-    return this.paymentsService.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdatePaymentDto, @Request() req: any) {
+    return this.paymentsService.update(id, dto, req.user);
   }
 }

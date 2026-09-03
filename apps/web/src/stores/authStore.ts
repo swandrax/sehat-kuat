@@ -3,7 +3,9 @@ import { create } from 'zustand';
 interface User {
   id: string;
   email: string;
-  role: 'PATIENT' | 'DOCTOR' | 'ADMIN';
+  name?: string;
+  phone?: string;
+  role: 'PATIENT' | 'DOCTOR' | 'ADMIN' | 'STAFF';
 }
 
 interface AuthState {

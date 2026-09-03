@@ -79,8 +79,10 @@ export default function DoctorDetailPage({
 
       return res.data;
     },
-    onSuccess: (data) => {
-      setSuccessQueue(data.queue);
+    onSuccess: (data: any) => {
+      if (data?.queue) {
+        setSuccessQueue(data.queue);
+      }
     },
     onError: (err: any) => {
       alert(err.message || "Gagal membuat janji");

@@ -32,4 +32,12 @@ export class AIController {
   ): Observable<MessageEvent> {
     return this.aiService.streamConsultation(prompt || 'Halo', userId);
   }
+
+  // Pre-consultation Triage & SOAP suggestion
+  @Post('triage')
+  @UseGuards(AuthGuard)
+  async analyzeTriage(@Request() req: any, @Query('symptoms') querySymptoms?: string) {
+    const symptoms = req.body?.symptoms || querySymptoms || 'Keluhan umum kesehatan';
+    return this.aiService.generateMedicalTriageSummary(symptoms);
+  }
 }

@@ -16,17 +16,39 @@ export class PatientsService {
     const limit = pagination.limit || 20;
     const skip = (page - 1) * limit;
 
-    const where = pagination.search
-      ? {
-          user: {
-            OR: [
-              { name: { contains: pagination.search, mode: 'insensitive' as const } },
-              { email: { contains: pagination.search, mode: 'insensitive' as const } },
-              { phone: { contains: pagination.search, mode: 'insensitive' as const } },
-            ],
+    const andConditions: any[] = [];
+
+    if (pagination.search) {
+      andConditions.push({
+        user: {
+          OR: [
+            { name: { contains: pagination.search, mode: 'insensitive' as const } },
+            { email: { contains: pagination.search, mode: 'insensitive' as const } },
+            { phone: { contains: pagination.search, mode: 'insensitive' as const } },
+          ],
+        },
+      });
+    }
+
+    if (pagination.letter) {
+      andConditions.push({
+        user: {
+          name: {
+            startsWith: pagination.letter.trim(),
+            mode: 'insensitive' as const,
           },
-        }
-      : {};
+        },
+      });
+    }
+
+    const where: any = andConditions.length > 0 ? { AND: andConditions } : {};
+
+    const orderBy: any = {};
+    if (pagination.sortBy === 'name') {
+      orderBy.user = { name: pagination.order || 'asc' };
+    } else {
+      orderBy.createdAt = pagination.order || 'desc';
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.patient.findMany({
@@ -38,7 +60,7 @@ export class PatientsService {
             select: { id: true, name: true, email: true, phone: true, latitude: true, longitude: true },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
       this.prisma.patient.count({ where }),
     ]);

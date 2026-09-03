@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto, UpdatePaymentDto } from './dto/payment.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -46,7 +51,7 @@ export class PaymentsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user?: any) {
     const payment = await this.prisma.payment.findUnique({
       where: { id },
       include: {
@@ -59,15 +64,30 @@ export class PaymentsService {
       throw new NotFoundException('Pembayaran tidak ditemukan');
     }
 
+    if (user?.role === 'PATIENT' && payment.patient.userId !== user.sub) {
+      throw new ForbiddenException('Akses ditolak ke data pembayaran ini');
+    }
+
     return payment;
   }
 
-  async create(dto: CreatePaymentDto) {
+  async create(dto: CreatePaymentDto, user?: any) {
+    let patientId = dto.patientId;
+    if (user?.role === 'PATIENT') {
+      const patient = await this.prisma.patient.findUnique({
+        where: { userId: user.sub },
+      });
+      if (!patient) {
+        throw new BadRequestException('Profil pasien tidak ditemukan');
+      }
+      patientId = patient.id;
+    }
+
     const ref = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    return this.prisma.payment.create({
+    const payment = await this.prisma.payment.create({
       data: {
-        patientId: dto.patientId,
+        patientId: patientId,
         appointmentId: dto.appointmentId,
         amount: dto.amount,
         currency: dto.currency || 'IDR',
@@ -79,21 +99,47 @@ export class PaymentsService {
         patient: { include: { user: { select: { name: true } } } },
       },
     });
+
+    if (user?.sub) {
+      await this.prisma.auditLog.create({
+        data: {
+          userId: user.sub,
+          action: 'PAYMENT_CREATED',
+          resource: 'Payment',
+          details: { paymentId: payment.id, amount: dto.amount, method: dto.paymentMethod },
+        },
+      });
+    }
+
+    return payment;
   }
 
-  async update(id: string, dto: UpdatePaymentDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdatePaymentDto, user?: any) {
+    await this.findOne(id, user);
 
     const data: any = { status: dto.status };
     if (dto.transactionRef) data.transactionRef = dto.transactionRef;
     if (dto.status === PaymentStatus.PAID) data.paidAt = new Date();
 
-    return this.prisma.payment.update({
+    const updated = await this.prisma.payment.update({
       where: { id },
       data,
       include: {
         patient: { include: { user: { select: { name: true } } } },
       },
     });
+
+    if (user?.sub) {
+      await this.prisma.auditLog.create({
+        data: {
+          userId: user.sub,
+          action: 'PAYMENT_CREATED', // Using existing AuditAction
+          resource: 'Payment',
+          details: { paymentId: id, status: dto.status },
+        },
+      });
+    }
+
+    return updated;
   }
 }

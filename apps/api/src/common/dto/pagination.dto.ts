@@ -18,4 +18,16 @@ export class PaginationDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsString()
+  letter?: string; // A-Z filter (e.g. 'A', 'B', ...)
+
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @IsOptional()
+  @IsString()
+  order?: 'asc' | 'desc' = 'desc';
 }
