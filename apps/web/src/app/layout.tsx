@@ -21,8 +21,18 @@ export const metadata = {
   publisher: "Zavora Life Healthcare",
   manifest: "/manifest.json",
   icons: {
-    icon: "/logo-zavora.png",
-    apple: "/logo-zavora.png",
+    icon: [
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Zavora Life",
   },
   openGraph: {
     title: "Zavora Life — All-in-One Health, Better Living",
@@ -60,6 +70,8 @@ export const viewport = {
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Providers } from "@/components/Providers";
+import { PwaRegister } from "@/components/pwa/PwaRegister";
+import { PwaInstallPrompt } from "@/components/pwa/PwaInstallPrompt";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const jsonLd = {
@@ -79,7 +91,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/logo-zavora.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Zavora Life" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -87,6 +102,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 transition-colors">
         <Providers>
+          <PwaRegister />
+          <PwaInstallPrompt />
           <div className="w-full min-h-screen bg-slate-50 dark:bg-[#090d16] relative flex flex-col">
             <AppLayout>
               {children}

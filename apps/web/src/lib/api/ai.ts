@@ -1,5 +1,7 @@
 import { apiClient } from './client';
 
+export type AIPersona = 'RAMAH' | 'MEDIS' | 'SEDERHANA' | 'RINGKAS';
+
 export interface SymptomClassificationResult {
   specialty: string;
   confidence: number;
@@ -38,16 +40,35 @@ export const aiApi = {
 
   getSession: (id: string) => apiClient(`/chat/sessions/${id}`),
 
-  createSession: (title?: string) =>
+  createSession: (options?: {
+    title?: string;
+    recipientId?: string;
+    recipientName?: string;
+    persona?: AIPersona;
+    customInstructions?: string;
+  }) =>
     apiClient('/chat/sessions', {
       method: 'POST',
-      body: JSON.stringify({ title }),
+      body: JSON.stringify(options || {}),
     }),
 
-  sendMessage: (sessionId: string, content: string) =>
+  sendMessage: (sessionId: string, content: string, persona?: AIPersona) =>
     apiClient(`/chat/sessions/${sessionId}/messages`, {
       method: 'POST',
-      body: JSON.stringify({ role: 'user', content }),
+      body: JSON.stringify({ role: 'user', content, persona }),
+    }),
+
+  generateCoPilotSummary: (sessionId: string, targetAudience: 'DOCTOR' | 'PATIENT' = 'DOCTOR') =>
+    apiClient(`/chat/sessions/${sessionId}/copilot`, {
+      method: 'POST',
+      body: JSON.stringify({ targetAudience }),
+    }),
+
+  // Friendly Chat / Custom Persona Direct Call
+  friendlyChat: (data: { prompt: string; persona?: AIPersona; customInstructions?: string }) =>
+    apiClient<{ reply: string }>('/ai/friendly-chat', {
+      method: 'POST',
+      body: JSON.stringify(data),
     }),
 
   // ML & Deep Learning Endpoints

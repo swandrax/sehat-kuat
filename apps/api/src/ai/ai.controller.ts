@@ -62,8 +62,28 @@ export class AIController {
   streamConsultation(
     @Query('prompt') prompt: string,
     @Query('userId') userId?: string,
+    @Query('persona') persona?: string,
+    @Query('customInstructions') customInstructions?: string,
   ): Observable<MessageEvent> {
-    return this.aiService.streamConsultation(prompt || 'Halo', userId);
+    return this.aiService.streamConsultation(
+      prompt || 'Halo',
+      userId,
+      persona || 'RAMAH',
+      customInstructions,
+    );
+  }
+
+  // Direct Friendly Chat / Custom Obrolan
+  @Post('friendly-chat')
+  async friendlyChat(
+    @Body() body: { prompt: string; persona?: string; customInstructions?: string },
+  ) {
+    const reply = await this.aiService.generateFriendlyResponse(
+      body.prompt || 'Halo',
+      body.persona || 'RAMAH',
+      body.customInstructions,
+    );
+    return { reply };
   }
 
   // Pre-consultation Triage & SOAP suggestion

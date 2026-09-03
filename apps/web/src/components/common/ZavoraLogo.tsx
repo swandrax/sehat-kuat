@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { Activity } from "lucide-react";
 
 interface ZavoraLogoProps {
@@ -70,9 +71,12 @@ export function ZavoraLogo({
         className={`${currentSize.box} bg-white flex items-center justify-center shadow-xs shrink-0 border border-slate-100 overflow-hidden relative p-0.5 rounded-2xl`}
       >
         {!imageError ? (
-          <img
+          <Image
             src="/logo-zavora.png"
             alt="Zavora Life"
+            width={48}
+            height={48}
+            priority
             className="w-full h-full object-contain"
             onError={() => setImageError(true)}
           />

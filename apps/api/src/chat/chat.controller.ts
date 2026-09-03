@@ -41,6 +41,15 @@ export class ChatController {
     return this.chatService.addMessage(id, req.user.sub, dto);
   }
 
+  @Post(':id/copilot')
+  generateCoPilot(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() dto: any,
+  ) {
+    return this.chatService.generateCoPilotSummary(id, req.user.sub, dto);
+  }
+
   @Delete(':id')
   deleteSession(@Param('id') id: string, @Request() req: any) {
     return this.chatService.deleteSession(id, req.user.sub);

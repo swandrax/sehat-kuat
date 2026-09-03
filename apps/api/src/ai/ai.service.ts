@@ -43,20 +43,70 @@ export class AIService {
     });
   }
 
+  buildSystemPrompt(
+    persona = 'RAMAH',
+    customInstructions?: string,
+    ragContext?: string,
+  ): string {
+    let base = '';
+    switch (persona.toUpperCase()) {
+      case 'MEDIS':
+        base =
+          'Anda adalah Asisten Medis Klinis Zavora Life. Berikan evaluasi klinis profesional, terstruktur dengan alur SOAP (Subjective, Objective, Assessment, Plan) secara obyektif, sebutkan kemungkinan diagnosis banding yang patut diverifikasi dokter, dan edukasi medis yang mendalam namun tetap santun.';
+        break;
+      case 'SEDERHANA':
+        base =
+          'Anda adalah Sahabat Sehat Keluarga Zavora Life. Gunakan gaya bahasa yang SANGAT RAMAH, HANGAT, dan SEDERHANA. Hindari istilah kedokteran yang sulit, gunakan perumpamaan yang mudah dipahami lansia, orang tua, maupun anak-anak, dengan nada bicara yang menenangkan.';
+        break;
+      case 'RINGKAS':
+        base =
+          'Anda adalah Asisten Cepat Zavora Life. Berikan jawaban yang ramah namun padat, to-the-point, berpoin-poin rapi, dan langsung mengarahkan pada tindakan atau pertolongan pertama yang relevan.';
+        break;
+      case 'RAMAH':
+      default:
+        base =
+          'Anda adalah Asisten AI Kesehatan Zavora Life yang SANGAT RAMAH, PENUH EMPATI, dan HANGAT 😊. Sapa pengguna dengan santun dan bersahabat (misalnya: "Halo Kak! Salam sehat selalu ya...", "Jangan khawatir ya, mari kita diskusikan keluhannya bersama-sama..."). Dengarkan keluhan dengan tulus, bantu tenangkan rasa cemas atau takut, jelaskan kondisi dengan bahasa yang ramah dan positif, berikan tips perawatan mandiri dan hidrasi yang aman, serta anjurkan dengan lembut untuk membuat janji temu dengan dokter spesialis kami jika butuh pemeriksaan langsung.';
+        break;
+    }
+
+    base +=
+      ' PENTING: Anda BUKAN pengganti dokter definitif. Jangan memberikan vonis penyakit berat secara sepihak. Selalu tambahkan catatan ramah di akhir pesan bahwa saran ini merupakan langkah edukasi awal.';
+
+    if (customInstructions) {
+      base += `\n\n[Instruksi Kustom Pengguna]:\n${customInstructions}`;
+    }
+
+    if (ragContext) {
+      base += `\n\n[Konteks Basis Data Medis Resmi Indonesia]:\n${ragContext}`;
+    }
+
+    return base;
+  }
+
   // Stream AI consultation chunks using SSE
-  streamConsultation(prompt: string, userId?: string): Observable<MessageEvent> {
+  streamConsultation(
+    prompt: string,
+    userId?: string,
+    persona = 'RAMAH',
+    customInstructions?: string,
+  ): Observable<MessageEvent> {
     return new Observable<MessageEvent>((subscriber) => {
       const startTime = Date.now();
       const apiKey = process.env.OPENROUTER_API_KEY;
       const model = process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet';
 
       if (!apiKey) {
-        // Fallback simulated intelligent response stream if no API key
+        // Warm and empathetic fallback simulated response stream
         const simulatedWords = [
-          'Halo! ', 'Berdasarkan ', 'keluhan ', 'yang ', 'Anda ', 'sampaikan, ',
-          'gejala ', 'ini ', 'dapat ', 'merupakan ', 'indikasi ', 'kondisi ', 'umum. ',
-          'Disarankan ', 'untuk ', 'menjaga ', 'hidrasi ', 'dan ', 'segera ', 'membuat ',
-          'janji ', 'temu ', 'dengan ', 'dokter ', 'spesialis ', 'kami ', 'di ', 'KlinikSehat.'
+          'Halo Kak! ',
+          'Salam sehat dan hangat dari Zavora Life 😊. ',
+          'Terima kasih ya sudah mempercayakan keluhan kesehatan Kakak kepada kami. ',
+          'Mendengar gejala yang Kakak ceritakan, jangan terlalu khawatir atau cemas dulu ya. ',
+          'Saat ini tubuh Kakak kemungkinan sedang memberi sinyal untuk beristirahat lebih banyak dan memastikan cairan tubuh tercukupi dengan baik. ',
+          'Untuk menjaga kesehatan dan mendapatkan evaluasi yang paling tepat serta aman, ',
+          'Kakak sangat dianjurkan untuk berkonsultasi langsung dengan dokter spesialis kami di Zavora Life terdekat. ',
+          'Apakah ada keluhan lain yang dirasakan seperti demam atau mual? ',
+          'Saya siap mendengarkan dan mendampingi Kakak kapan saja!',
         ];
 
         let index = 0;
@@ -80,12 +130,13 @@ export class AIService {
               status: 'SUCCESS',
             });
           }
-        }, 80);
+        }, 70);
 
         return () => clearInterval(interval);
       }
 
       const ragContext = this.knowledgeService.getRAGContext(prompt);
+      const systemPrompt = this.buildSystemPrompt(persona, customInstructions, ragContext);
 
       // Stream from OpenRouter API
       (async () => {
@@ -103,9 +154,7 @@ export class AIService {
               messages: [
                 {
                   role: 'system',
-                  content:
-                    'Anda adalah Asisten AI KlinikSehat. Anda BUKAN seorang dokter. PENTING: Jangan pernah memberikan diagnosis medis definitif. Berikan penjelasan kesehatan yang sederhana, mudah dipahami, tidak menakut-nakuti. Selalu tambahkan disclaimer di akhir pesan bahwa saran ini bukan pengganti konsultasi dokter.' +
-                    (ragContext ? `\n\n[Konteks Basis Data Medis Resmi Indonesia]:${ragContext}` : ''),
+                  content: systemPrompt,
                 },
                 { role: 'user', content: prompt },
               ],
@@ -253,5 +302,54 @@ export class AIService {
         plan: '1. Konsultasi dokter spesialis terkait\n2. Edukasi hidrasi & istirahat\n3. Observasi perburukan gejala',
       },
     };
+  }
+
+  async generateFriendlyResponse(
+    prompt: string,
+    persona = 'RAMAH',
+    customInstructions?: string,
+  ): Promise<string> {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    const model = process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet';
+    const ragContext = this.knowledgeService.getRAGContext(prompt);
+    const systemPrompt = this.buildSystemPrompt(persona, customInstructions, ragContext);
+
+    if (apiKey) {
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+            'HTTP-Referer': 'https://kliniksehat.id',
+            'X-Title': 'KlinikSehat AI',
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: prompt },
+            ],
+          }),
+        });
+
+        if (response.ok) {
+          const json = await response.json();
+          const reply = json.choices?.[0]?.message?.content;
+          if (reply) return reply;
+        }
+      } catch (e) {
+        // fallback on error
+      }
+    }
+
+    // Friendly local response generator
+    const matched = this.knowledgeService.searchDiseases(prompt, 1);
+    const diseaseTip =
+      matched.length > 0
+        ? ` Berdasarkan referensi data kesehatan kami tentang kondisi serupa (${matched[0].name}: ${matched[0].description.slice(0, 120)}...), penting untuk tidak menyepelekannya ya.`
+        : '';
+
+    return `Halo Kak! Salam sehat dan hangat dari Zavora Life 😊.\n\nTerima kasih banyak ya sudah berbagi keluhan kesehatan dengan kami. Mengenai "${prompt}", Kakak tidak perlu panik.${diseaseTip}\n\nLangkah awal yang sangat baik dilakukan adalah memperbanyak istirahat berkualitas, mencukupi hidrasi air putih hangat, dan menghindari aktivitas fisik berat terlebih dahulu. Agar penanganan lebih maksimal dan aman, kami sangat menyarankan Kakak untuk membuat janji temu dengan dokter spesialis kami di Zavora Life terdekat ya.\n\nSemoga lekas pulih dan sehat kembali! Ada hal lain yang ingin Kakak tanyakan?`;
   }
 }

@@ -1,23 +1,23 @@
 "use client";
 
 import { useState, useRef, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import {
-  ArrowLeft,
   Send,
   Bot,
   User,
   AlertCircle,
   Stethoscope,
-  Sparkles,
   ShieldCheck,
-  Calendar,
-  Activity,
-  ChevronRight,
-  HelpCircle,
+  Smile,
+  BookOpen,
+  Zap,
+  Settings2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
+import { AIPersona } from "@/lib/api";
 
 interface Message {
   id: string;
@@ -26,23 +26,57 @@ interface Message {
 }
 
 function AIScreeningContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const initialPrompt = searchParams.get("prompt");
   const { user } = useAuthStore();
+
+  const userName = user?.name ? user.name.split(" ")[0] : "";
+
+  // Persona & Custom Obrolan
+  const [persona, setPersona] = useState<AIPersona>("RAMAH");
+  const [customInstructions, setCustomInstructions] = useState("");
+  const [showCustomModal, setShowCustomModal] = useState(false);
 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
       role: "ai",
-      content:
-        "Halo! Saya Asisten AI Kesehatan Zavora Life. Silakan ceritakan keluhan, gejala, atau pertanyaan seputar kesehatan dan obat-obatan yang Anda rasakan. Saya akan memberikan analisis awal dan rekomendasi langkah medis yang tepat.",
+      content: userName
+        ? `Halo Kak ${userName}! Salam sehat dan hangat dari Zavora Life 😊. Senang sekali bisa mendampingi Kakak hari ini. Silakan ceritakan keluhan, gejala, atau pertanyaan seputar kesehatan dan obat-obatan yang sedang dirasakan. Saya siap mendengarkan dan memberikan panduan dengan penuh perhatian!`
+        : "Halo Kak! Salam sehat dan hangat dari Zavora Life 😊. Senang sekali bisa menyapa Anda hari ini. Silakan ceritakan keluhan, gejala, atau pertanyaan seputar kesehatan dan obat-obatan yang sedang dirasakan. Saya siap membantu memberikan panduan awal yang ramah dan aman!",
     },
   ]);
   const [input, setInput] = useState(initialPrompt || "");
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  const personaOptions: Array<{ key: AIPersona; label: string; icon: React.ReactNode; desc: string }> = [
+    {
+      key: "RAMAH",
+      label: "Ramah & Hangat",
+      icon: <Smile className="w-3.5 h-3.5 text-pink-500" />,
+      desc: "Empatik, menenangkan rasa cemas, penuh perhatian",
+    },
+    {
+      key: "MEDIS",
+      label: "Medis Klinis",
+      icon: <Stethoscope className="w-3.5 h-3.5 text-blue-500" />,
+      desc: "Format terstruktur SOAP & terminologi klinis",
+    },
+    {
+      key: "SEDERHANA",
+      label: "Bahasa Sederhana",
+      icon: <BookOpen className="w-3.5 h-3.5 text-emerald-500" />,
+      desc: "Bahasa mudah dimengerti lansia & keluarga",
+    },
+    {
+      key: "RINGKAS",
+      label: "Cepat & Ringkas",
+      icon: <Zap className="w-3.5 h-3.5 text-amber-500" />,
+      desc: "To-the-point & langkah tindakan cepat",
+    },
+  ];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -74,9 +108,11 @@ function AIScreeningContent() {
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
     const userIdQuery = user?.id ? `&userId=${user.id}` : "";
+    const personaQuery = `&persona=${persona}`;
+    const customQuery = customInstructions ? `&customInstructions=${encodeURIComponent(customInstructions)}` : "";
     const streamUrl = `${apiUrl}/ai/consultation/stream?prompt=${encodeURIComponent(
       userMessage.content,
-    )}${userIdQuery}`;
+    )}${userIdQuery}${personaQuery}${customQuery}`;
 
     const es = new EventSource(streamUrl);
     eventSourceRef.current = es;
@@ -124,7 +160,9 @@ function AIScreeningContent() {
 
       // Gracefully provide clinical triage fallback when API connection cannot be established
       const fallbackResponse =
-        "Berdasarkan keluhan yang Anda sampaikan, disarankan untuk menjaga istirahat yang cukup, penuhi kebutuhan cairan, dan buat janji temu dengan dokter spesialis kami di Zavora Life untuk evaluasi medis lebih lanjut.";
+        persona === "MEDIS"
+          ? `Berdasarkan tinjauan klinis awal atas keluhan Anda, disarankan untuk menjaga pemantauan tanda vital dan segera menjadwalkan konsultasi fisik dengan dokter spesialis di Zavora Life.`
+          : `Halo Kak! Berdasarkan keluhan yang disampaikan, jangan terlalu khawatir ya 😊. Disarankan untuk menjaga istirahat yang cukup, penuhi kebutuhan cairan, dan buat janji temu dengan dokter spesialis kami di Zavora Life untuk evaluasi medis lebih lanjut.`;
 
       setMessages((prev) =>
         prev.map((msg) =>
@@ -149,32 +187,101 @@ function AIScreeningContent() {
   return (
     <div className="max-w-4xl mx-auto flex flex-col h-[calc(100vh-8.5rem)] bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
       {/* Header Banner */}
-      <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+      <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center shadow-xs">
             <Bot className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-sm font-bold text-slate-900">Zavora Life AI Health Assistant</h1>
+              <h1 className="text-sm font-bold text-slate-900">Zavora Life AI Assistant</h1>
               <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                Medical Screening
+                Konsultasi & Triase
               </span>
             </div>
-            <p className="text-[11px] text-slate-500">Panduan triase awal & pemahaman gejala terpercaya</p>
+            <p className="text-[11px] text-slate-500">Panduan kesehatan ramah & pemahaman gejala terpercaya</p>
           </div>
         </div>
 
-        <Link
-          href="/doctors"
-          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-emerald-500 text-slate-700 hover:text-emerald-700 rounded-xl text-xs font-bold transition shadow-2xs"
-        >
-          <Stethoscope className="w-3.5 h-3.5 text-emerald-600" /> Temukan Dokter
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCustomModal(!showCustomModal)}
+            title="Kustom Obrolan & Preferensi"
+            className="flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-emerald-500 text-slate-700 rounded-xl text-xs font-bold transition shadow-2xs"
+          >
+            <Settings2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="hidden sm:inline">Kustom Obrolan</span>
+          </button>
+          <Link
+            href="/doctors"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-emerald-500 text-slate-700 hover:text-emerald-700 rounded-xl text-xs font-bold transition shadow-2xs"
+          >
+            <Stethoscope className="w-3.5 h-3.5 text-emerald-600" /> Temukan Dokter
+          </Link>
+        </div>
       </div>
 
+      {/* Persona Selection Bar */}
+      <div className="bg-slate-50/90 border-b border-slate-200/80 px-4 py-2 flex items-center gap-2 overflow-x-auto shrink-0">
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+          Gaya Obrolan:
+        </span>
+        <div className="flex items-center gap-1.5">
+          {personaOptions.map((opt) => {
+            const isSelected = persona === opt.key;
+            return (
+              <button
+                key={opt.key}
+                onClick={() => setPersona(opt.key)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold transition whitespace-nowrap ${
+                  isSelected
+                    ? "bg-white text-emerald-800 border border-emerald-300 shadow-2xs"
+                    : "text-slate-600 hover:bg-slate-200/60"
+                }`}
+              >
+                {opt.icon}
+                <span>{opt.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Custom Obrolan Drawer Modal */}
+      {showCustomModal && (
+        <div className="bg-emerald-50/90 border-b border-emerald-200 p-3 px-4 shrink-0 text-xs space-y-2 animate-in slide-in-from-top duration-200">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-emerald-950 flex items-center gap-1.5">
+              <Settings2 className="w-4 h-4 text-emerald-600" />
+              Instruksi Kustom Obrolan
+            </span>
+            <button onClick={() => setShowCustomModal(false)} className="text-slate-400 hover:text-slate-600">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Contoh: Panggil saya Mas Budi, jelaskan dengan perumpamaan sederhana..."
+              value={customInstructions}
+              onChange={(e) => setCustomInstructions(e.target.value)}
+              className="flex-1 text-xs p-2.5 rounded-xl bg-white border border-emerald-200 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+            />
+            <button
+              onClick={() => setShowCustomModal(false)}
+              className="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition"
+            >
+              Simpan
+            </button>
+          </div>
+          <p className="text-[10px] text-emerald-800">
+            AI akan mengingat preferensi nada bicara dan informasi tambahan Anda selama konsultasi berlangsung.
+          </p>
+        </div>
+      )}
+
       {/* Medical Safety Disclaimer Banner */}
-      <div className="bg-amber-50/80 border-b border-amber-100/80 px-4 py-2.5 flex items-start gap-2.5 shrink-0 text-xs text-amber-900">
+      <div className="bg-amber-50/80 border-b border-amber-100/80 px-4 py-2 flex items-start gap-2.5 shrink-0 text-xs text-amber-900">
         <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
         <p className="text-[11px] leading-relaxed">
           <span className="font-bold">Penting:</span> AI ini memberikan analisis informasi kesehatan awal dan <span className="underline font-semibold">bukan diagnosis definitif</span>. Segera hubungi dokter spesialis atau UGD jika Anda mengalami kondisi darurat.
@@ -201,19 +308,21 @@ function AIScreeningContent() {
                   : "bg-slate-50 border border-slate-200/80 text-slate-800 rounded-tl-xs"
               }`}
             >
-              {msg.content || (msg.role === "ai" && isStreaming && (
-                <span className="flex items-center gap-1 py-1">
-                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce"></span>
-                  <span
-                    className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  ></span>
-                  <span
-                    className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.4s" }}
-                  ></span>
-                </span>
-              ))}
+              <div className="whitespace-pre-line">
+                {msg.content || (msg.role === "ai" && isStreaming && (
+                  <span className="flex items-center gap-1 py-1">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce"></span>
+                    <span
+                      className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    ></span>
+                    <span
+                      className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.4s" }}
+                    ></span>
+                  </span>
+                ))}
+              </div>
             </div>
 
             {msg.role === "user" && (
@@ -224,18 +333,14 @@ function AIScreeningContent() {
           </div>
         ))}
 
-        {/* Suggested Quick Question Chips */}
-        {messages.length <= 2 && !isStreaming && (
-          <div className="pt-3">
-            <p className="text-[11px] font-bold text-slate-400 mb-2 flex items-center gap-1">
-              <HelpCircle className="w-3.5 h-3.5 text-emerald-600" />
-              Pertanyaan & Keluhan Sering Diajukan:
-            </p>
+        {/* Suggested Complaint Chips */}
+        {messages.length === 1 && (
+          <div className="pt-2">
+            <p className="text-xs font-bold text-slate-400 mb-2">Pilihan Cepat Keluhan Umum:</p>
             <div className="flex flex-wrap gap-2">
-              {suggestedChips.map((chip) => (
+              {suggestedChips.map((chip, idx) => (
                 <button
-                  key={chip}
-                  type="button"
+                  key={idx}
                   onClick={() => setInput(chip)}
                   className="px-3.5 py-1.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 rounded-xl text-xs font-medium transition shadow-2xs"
                 >
@@ -278,7 +383,7 @@ function AIScreeningContent() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={isStreaming}
-            placeholder="Tulis keluhan kesehatan, gejala, atau pertanyaan obat..."
+            placeholder={`Tulis keluhan atau pertanyaan (${personaOptions.find((p) => p.key === persona)?.label})...`}
             className="flex-1 bg-white border border-slate-200 rounded-2xl px-4 py-3 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition disabled:opacity-50 font-medium"
           />
           <button

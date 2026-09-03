@@ -1,21 +1,61 @@
 {
   "name": "Zavora Life — All-in-One Health, Better Living",
   "short_name": "Zavora Life",
-  "description": "Platform Layanan Kesehatan Digital, Konsultasi Dokter, Monitoring Vital, & AI Assistant Terpercaya",
+  "description": "Platform Layanan Kesehatan Digital, Konsultasi Dokter Spesialis, Monitoring Vital, & AI Assistant Terpercaya",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f8fafc",
   "theme_color": "#059669",
+  "categories": ["medical", "health", "lifestyle"],
   "icons": [
     {
       "src": "/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Konsultasi AI",
+      "short_name": "AI Screening",
+      "description": "Mulai triase dan konsultasi gejala kesehatan bersama AI",
+      "url": "/ai-screening",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Temukan Dokter",
+      "short_name": "Dokter",
+      "description": "Cari jadwal dan konsultasi dengan dokter spesialis",
+      "url": "/doctors",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Janji Temu Saya",
+      "short_name": "Janji Temu",
+      "description": "Lihat antrean dan jadwal janji temu",
+      "url": "/appointments",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
     }
   ]
 }

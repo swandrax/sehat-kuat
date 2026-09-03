@@ -1,22 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Activity, ShieldCheck } from "lucide-react";
 
 export function AppSplashLoader() {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !sessionStorage.getItem("zavora_splash_shown");
+  });
   const [fadeState, setFadeState] = useState<"showing" | "fading" | "hidden">("showing");
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (sessionStorage.getItem("zavora_splash_shown")) {
+      return;
+    }
+
+    // Fast, lightweight splash animation for smooth LCP and user experience
     const timer = setTimeout(() => {
       setFadeState("fading");
+      sessionStorage.setItem("zavora_splash_shown", "true");
       const removeTimer = setTimeout(() => {
         setFadeState("hidden");
         setVisible(false);
-      }, 500);
+      }, 300);
       return () => clearTimeout(removeTimer);
-    }, 1200);
+    }, 400);
 
     return () => clearTimeout(timer);
   }, []);
@@ -25,7 +37,7 @@ export function AppSplashLoader() {
 
   return (
     <div
-      className={`fixed inset-0 z-500 bg-slate-950 text-white flex flex-col items-center justify-between p-8 transition-opacity duration-500 select-none ${
+      className={`fixed inset-0 z-500 bg-slate-950 text-white flex flex-col items-center justify-between p-8 transition-opacity duration-300 select-none ${
         fadeState === "fading" ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
@@ -40,13 +52,16 @@ export function AppSplashLoader() {
         <div className="relative">
           {/* Glowing Pulse Rings */}
           <div className="absolute -inset-4 rounded-3xl bg-emerald-500/20 blur-xl animate-pulse"></div>
-          
+
           {/* Core Emblem with Logo Image */}
           <div className="relative w-28 h-28 rounded-3xl bg-white shadow-2xl flex items-center justify-center border border-emerald-400/30 overflow-hidden p-2 transform transition-transform hover:scale-105">
             {!imageError ? (
-              <img
+              <Image
                 src="/logo-zavora.png"
                 alt="Logo Zavora Life"
+                width={96}
+                height={96}
+                priority
                 className="w-full h-full object-contain"
                 onError={() => setImageError(true)}
               />

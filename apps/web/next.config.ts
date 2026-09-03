@@ -2,6 +2,11 @@ import path from "path";
 
 const nextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
+  compress: true,
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
   turbopack: {
     root: path.resolve(__dirname, "../../"),
   },

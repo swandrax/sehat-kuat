@@ -11,23 +11,17 @@ import {
   Lock,
   Key,
   Users,
-  CreditCard,
   Info,
   FileText,
   PhoneCall,
-  Activity,
-  HeartPulse,
   Printer,
-  Download,
   Upload,
   Sparkles,
   Bot,
   CheckCircle2,
-  AlertCircle,
   FileCheck,
   Plus,
   QrCode,
-  Calendar,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useRouter } from "next/navigation";
@@ -69,6 +63,12 @@ export default function PatientProfilePage() {
     | "TERMS_SERVICE"
     | "CONTACT_HELP"
   >(null);
+
+  // Stable claim metadata for resume modal to ensure render purity and avoid hydration mismatch
+  const [claimMeta] = useState(() => ({
+    code: "CLM-88421092",
+    dateFormatted: "3 September 2026",
+  }));
 
   // Patient Profile Data State
   const [patientData, setPatientData] = useState({
@@ -875,10 +875,10 @@ export default function PatientProfilePage() {
                 <div className="text-right space-y-0.5">
                   <span className="text-[10px] font-bold text-slate-500 uppercase">Kode Klaim Medis:</span>
                   <p className="font-mono font-black text-sm text-emerald-700">
-                    CLM-{Date.now().toString().slice(-8)}
+                    {claimMeta.code}
                   </p>
                   <span className="text-[10px] font-mono text-slate-400">
-                    Tgl: {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                    Tgl: {claimMeta.dateFormatted}
                   </span>
                 </div>
               </div>
@@ -1075,7 +1075,7 @@ export default function PatientProfilePage() {
               <a
                 href="https://wa.me/62811111111"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-bold flex items-center justify-between hover:bg-emerald-100 transition"
               >
                 <span>WhatsApp Hotline 24 Jam</span>
