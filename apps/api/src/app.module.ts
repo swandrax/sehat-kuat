@@ -22,6 +22,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { ConsultationsModule } from './consultations/consultations.module';
 import { AuditModule } from './audit/audit.module';
 import { FacilitiesModule } from './facilities/facilities.module';
+import { InsuranceModule } from './insurance/insurance.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { FacilitiesModule } from './facilities/facilities.module';
     WebhooksModule,
     ConsultationsModule,
     FacilitiesModule,
+    InsuranceModule,
   ],
   controllers: [AppController],
   providers: [
