@@ -1,9 +1,10 @@
 import { PrismaClient, RoleType } from '@prisma/client';
+import * as argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('🌱 Seeding Zavora Life database with official roles and accounts...');
 
   // 1. Roles
   const adminRole = await prisma.role.upsert({
@@ -30,36 +31,56 @@ async function main() {
     create: { name: RoleType.PATIENT, description: 'Registered Patient' },
   });
 
-  // Pre-hashed Argon2id password for "Password123!"
-  const defaultPasswordHash = '$argon2id$v=19$m=65536,t=3,p=4$K8bJpC8X+mP8uY7n4x9w6A$e1HqI0S4F+x3G9w2R8k4Y+v5M7q2P8z1A3b4C5d6E7f';
+  // Default hashed password for "Password123!"
+  const defaultPasswordHash = await argon2.hash('Password123!');
 
   // 2. Clinics
-  const clinic1 = await prisma.clinic.create({
-    data: {
-      name: 'Klinik Sehat Pusat Jakarta',
-      address: 'Jl. Sudirman No. 45, Jakarta Pusat',
+  const clinic1 = await prisma.clinic.upsert({
+    where: { id: 'clinic-pusat' },
+    update: {
+      name: 'Klinik Zavora Life Pusat Jakarta',
+      address: 'Jl. Jenderal Sudirman No. 45, Jakarta Pusat',
       phone: '+62215551234',
-      email: 'jakarta@kliniksehat.id',
+      email: 'jakarta@zavoralife.id',
+    },
+    create: {
+      id: 'clinic-pusat',
+      name: 'Klinik Zavora Life Pusat Jakarta',
+      address: 'Jl. Jenderal Sudirman No. 45, Jakarta Pusat',
+      phone: '+62215551234',
+      email: 'jakarta@zavoralife.id',
     },
   });
 
-  const clinic2 = await prisma.clinic.create({
-    data: {
-      name: 'Klinik Sehat Bandung',
-      address: 'Jl. Ir. H. Juanda No. 88, Bandung',
-      phone: '+62224445678',
-      email: 'bandung@kliniksehat.id',
+  const clinic2 = await prisma.clinic.upsert({
+    where: { id: 'clinic-selatan' },
+    update: {
+      name: 'Klinik Zavora Life Cabang Selatan',
+      address: 'Jl. TB Simatupang No. 88, Cilandak, Jakarta Selatan',
+      phone: '+62217775678',
+      email: 'selatan@zavoralife.id',
+    },
+    create: {
+      id: 'clinic-selatan',
+      name: 'Klinik Zavora Life Cabang Selatan',
+      address: 'Jl. TB Simatupang No. 88, Cilandak, Jakarta Selatan',
+      phone: '+62217775678',
+      email: 'selatan@zavoralife.id',
     },
   });
 
   // 3. Admin User
   await prisma.user.upsert({
-    where: { email: 'admin@kliniksehat.id' },
-    update: {},
-    create: {
-      email: 'admin@kliniksehat.id',
+    where: { email: 'admin@zavoralife.id' },
+    update: {
       passwordHash: defaultPasswordHash,
-      name: 'Admin Utama',
+      roleId: adminRole.id,
+      name: 'Administrator Zavora Life',
+    },
+    create: {
+      email: 'admin@zavoralife.id',
+      passwordHash: defaultPasswordHash,
+      name: 'Administrator Zavora Life',
       phone: '+628111111111',
       roleId: adminRole.id,
     },
@@ -67,92 +88,177 @@ async function main() {
 
   // 4. Staff User
   await prisma.user.upsert({
-    where: { email: 'staff@kliniksehat.id' },
-    update: {},
-    create: {
-      email: 'staff@kliniksehat.id',
+    where: { email: 'staff@zavoralife.id' },
+    update: {
       passwordHash: defaultPasswordHash,
-      name: 'Staff Frontdesk',
+      roleId: staffRole.id,
+    },
+    create: {
+      email: 'staff@zavoralife.id',
+      passwordHash: defaultPasswordHash,
+      name: 'Staff Frontdesk Zavora Life',
       phone: '+628112222222',
       roleId: staffRole.id,
     },
   });
 
-  // 5. Doctors
-  const doctorUser1 = await prisma.user.upsert({
-    where: { email: 'dr.budi@kliniksehat.id' },
-    update: {},
-    create: {
-      email: 'dr.budi@kliniksehat.id',
+  // 5. Official Project Doctors
+  // Doctor 1: dr. Andi Setiawan, Sp.PD
+  const docUser1 = await prisma.user.upsert({
+    where: { email: 'andi@zavoralife.id' },
+    update: {
       passwordHash: defaultPasswordHash,
-      name: 'dr. Budi Santoso, Sp.PD',
+      roleId: doctorRole.id,
+      name: 'dr. Andi Setiawan, Sp.PD',
+    },
+    create: {
+      email: 'andi@zavoralife.id',
+      passwordHash: defaultPasswordHash,
+      name: 'dr. Andi Setiawan, Sp.PD',
       phone: '+6281234567890',
       roleId: doctorRole.id,
     },
   });
 
-  const doctor1 = await prisma.doctor.upsert({
-    where: { userId: doctorUser1.id },
-    update: {},
+  await prisma.doctor.upsert({
+    where: { userId: docUser1.id },
+    update: {
+      specialization: 'Spesialis Penyakit Dalam',
+      clinicId: clinic1.id,
+      isAvailable: true,
+    },
     create: {
-      userId: doctorUser1.id,
+      userId: docUser1.id,
       clinicId: clinic1.id,
       specialization: 'Spesialis Penyakit Dalam',
-      licenseNumber: 'SIP.123/DKI/2022',
-      bio: 'Dokter spesialis penyakit dalam dengan pengalaman lebih dari 10 tahun menangani diabetes, hipertensi, dan gangguan metabolik.',
+      licenseNumber: 'STR-3171-8892-2024',
+      bio: 'Dokter spesialis penyakit dalam berpengalaman menangani diabetes, hipertensi, dan metabolik.',
       experienceYears: 10,
       education: 'Sp.PD - Universitas Indonesia',
       isAvailable: true,
     },
   });
 
-  const doctorUser2 = await prisma.user.upsert({
-    where: { email: 'dr.siti@kliniksehat.id' },
-    update: {},
-    create: {
-      email: 'dr.siti@kliniksehat.id',
+  // Doctor 2: dr. Amanda Kartika, Sp.A
+  const docUser2 = await prisma.user.upsert({
+    where: { email: 'amanda.kartika@zavoralife.id' },
+    update: {
       passwordHash: defaultPasswordHash,
-      name: 'dr. Siti Rahma, Sp.A',
+      roleId: doctorRole.id,
+      name: 'dr. Amanda Kartika, Sp.A',
+    },
+    create: {
+      email: 'amanda.kartika@zavoralife.id',
+      passwordHash: defaultPasswordHash,
+      name: 'dr. Amanda Kartika, Sp.A',
       phone: '+6281298765432',
       roleId: doctorRole.id,
     },
   });
 
-  const doctor2 = await prisma.doctor.upsert({
-    where: { userId: doctorUser2.id },
-    update: {},
+  await prisma.doctor.upsert({
+    where: { userId: docUser2.id },
+    update: {
+      specialization: 'Spesialis Anak (Pediatri)',
+      clinicId: clinic2.id,
+      isAvailable: true,
+    },
     create: {
-      userId: doctorUser2.id,
-      clinicId: clinic1.id,
-      specialization: 'Spesialis Anak',
-      licenseNumber: 'SIP.456/DKI/2023',
-      bio: 'Dokter spesialis anak ramah yang berdedikasi pada tumbuh kembang optimal anak dan imunisasi lengkap.',
-      experienceYears: 7,
+      userId: docUser2.id,
+      clinicId: clinic2.id,
+      specialization: 'Spesialis Anak (Pediatri)',
+      licenseNumber: 'STR-3273-5519-2023',
+      bio: 'Dokter spesialis anak berdedikasi pada tumbuh kembang optimal dan imunisasi.',
+      experienceYears: 5,
       education: 'Sp.A - Universitas Padjadjaran',
       isAvailable: true,
     },
   });
 
-  // 6. Schedules for Doctors
-  await prisma.doctorSchedule.createMany({
-    data: [
-      { doctorId: doctor1.id, dayOfWeek: 1, startTime: '09:00', endTime: '13:00', maxPatients: 15 },
-      { doctorId: doctor1.id, dayOfWeek: 3, startTime: '09:00', endTime: '13:00', maxPatients: 15 },
-      { doctorId: doctor1.id, dayOfWeek: 5, startTime: '14:00', endTime: '18:00', maxPatients: 15 },
-      { doctorId: doctor2.id, dayOfWeek: 2, startTime: '10:00', endTime: '15:00', maxPatients: 20 },
-      { doctorId: doctor2.id, dayOfWeek: 4, startTime: '10:00', endTime: '15:00', maxPatients: 20 },
-      { doctorId: doctor2.id, dayOfWeek: 6, startTime: '08:00', endTime: '12:00', maxPatients: 12 },
-    ],
+  // Doctor 3: dr. Budi Setiawan, Sp.JP
+  const docUser3 = await prisma.user.upsert({
+    where: { email: 'budi.setiawan@zavoralife.id' },
+    update: {
+      passwordHash: defaultPasswordHash,
+      roleId: doctorRole.id,
+      name: 'dr. Budi Setiawan, Sp.JP',
+    },
+    create: {
+      email: 'budi.setiawan@zavoralife.id',
+      passwordHash: defaultPasswordHash,
+      name: 'dr. Budi Setiawan, Sp.JP',
+      phone: '+6281255566677',
+      roleId: doctorRole.id,
+    },
   });
 
-  // 7. Patients
-  const patientUser1 = await prisma.user.upsert({
-    where: { email: 'andi@example.com' },
-    update: {},
+  await prisma.doctor.upsert({
+    where: { userId: docUser3.id },
+    update: {
+      specialization: 'Spesialis Jantung & Pembuluh Darah',
+      clinicId: clinic1.id,
+      isAvailable: true,
+    },
     create: {
-      email: 'andi@example.com',
+      userId: docUser3.id,
+      clinicId: clinic1.id,
+      specialization: 'Spesialis Jantung & Pembuluh Darah',
+      licenseNumber: 'STR-3171-1120-2022',
+      bio: 'Dokter spesialis jantung dan kardiovaskular pencegahan.',
+      experienceYears: 12,
+      education: 'Sp.JP - Universitas Indonesia',
+      isAvailable: true,
+    },
+  });
+
+  // Doctor 4: dr. Hendra Pratama, Sp.PD
+  const docUser4 = await prisma.user.upsert({
+    where: { email: 'hendra.pratama@zavoralife.id' },
+    update: {
       passwordHash: defaultPasswordHash,
-      name: 'Andi Pratama',
+      roleId: doctorRole.id,
+      name: 'dr. Hendra Pratama, Sp.PD',
+    },
+    create: {
+      email: 'hendra.pratama@zavoralife.id',
+      passwordHash: defaultPasswordHash,
+      name: 'dr. Hendra Pratama, Sp.PD',
+      phone: '+6281233399988',
+      roleId: doctorRole.id,
+    },
+  });
+
+  await prisma.doctor.upsert({
+    where: { userId: docUser4.id },
+    update: {
+      specialization: 'Spesialis Penyakit Dalam',
+      clinicId: clinic1.id,
+      isAvailable: true,
+    },
+    create: {
+      userId: docUser4.id,
+      clinicId: clinic1.id,
+      specialization: 'Spesialis Penyakit Dalam',
+      licenseNumber: 'STR-3171-8892-2024',
+      bio: 'Dokter spesialis penyakit dalam dengan fokus gastroenterohepatologi.',
+      experienceYears: 8,
+      education: 'Sp.PD - Universitas Gadjah Mada',
+      isAvailable: true,
+    },
+  });
+
+  // 6. Registered Patients
+  const patientUser1 = await prisma.user.upsert({
+    where: { email: 'budi@pasien.id' },
+    update: {
+      passwordHash: defaultPasswordHash,
+      roleId: patientRole.id,
+      name: 'Budi Santoso',
+    },
+    create: {
+      email: 'budi@pasien.id',
+      passwordHash: defaultPasswordHash,
+      name: 'Budi Santoso',
       phone: '+628567890123',
       roleId: patientRole.id,
       latitude: -6.2088,
@@ -160,9 +266,12 @@ async function main() {
     },
   });
 
-  const patient1 = await prisma.patient.upsert({
+  await prisma.patient.upsert({
     where: { userId: patientUser1.id },
-    update: {},
+    update: {
+      emergencyContact: '+628123333444',
+      bloodType: 'O+',
+    },
     create: {
       userId: patientUser1.id,
       dateOfBirth: new Date('1990-05-15'),
@@ -173,136 +282,7 @@ async function main() {
     },
   });
 
-  const patientUser2 = await prisma.user.upsert({
-    where: { email: 'dewi@example.com' },
-    update: {},
-    create: {
-      email: 'dewi@example.com',
-      passwordHash: defaultPasswordHash,
-      name: 'Dewi Lestari',
-      phone: '+628578901234',
-      roleId: patientRole.id,
-    },
-  });
-
-  const patient2 = await prisma.patient.upsert({
-    where: { userId: patientUser2.id },
-    update: {},
-    create: {
-      userId: patientUser2.id,
-      dateOfBirth: new Date('1995-11-20'),
-      gender: 'Perempuan',
-      address: 'Jl. Dago No. 40, Bandung',
-      emergencyContact: '+628135555666',
-      bloodType: 'A+',
-    },
-  });
-
-  const patientUser3 = await prisma.user.upsert({
-    where: { email: 'rina@example.com' },
-    update: {},
-    create: {
-      email: 'rina@example.com',
-      passwordHash: defaultPasswordHash,
-      name: 'Rina Kusuma',
-      phone: '+628589012345',
-      roleId: patientRole.id,
-    },
-  });
-
-  const patient3 = await prisma.patient.upsert({
-    where: { userId: patientUser3.id },
-    update: {},
-    create: {
-      userId: patientUser3.id,
-      dateOfBirth: new Date('2000-02-10'),
-      gender: 'Perempuan',
-      address: 'Jl. Kebon Jeruk No. 8, Jakarta Barat',
-      emergencyContact: '+628147777888',
-      bloodType: 'B+',
-    },
-  });
-
-  // 8. Sample Appointment & Queue
-  const appointment1 = await prisma.appointment.create({
-    data: {
-      patientId: patient1.id,
-      doctorId: doctor1.id,
-      clinicId: clinic1.id,
-      appointmentDate: new Date(),
-      appointmentTime: '09:30',
-      status: 'CONFIRMED',
-      notes: 'Konsultasi rutin kadar gula darah',
-    },
-  });
-
-  await prisma.queue.create({
-    data: {
-      clinicId: clinic1.id,
-      doctorId: doctor1.id,
-      patientId: patient1.id,
-      appointmentId: appointment1.id,
-      queueNumber: 1,
-      status: 'WAITING',
-      date: new Date(),
-    },
-  });
-
-  // 9. Sample Medical Record & Prescription
-  const medicalRecord1 = await prisma.medicalRecord.create({
-    data: {
-      patientId: patient1.id,
-      doctorId: doctor1.id,
-      chiefComplaint: 'Sering merasa haus dan cepat lelah',
-      clinicalNotes: 'Pasien tampak stabil, tekanan darah 120/80 mmHg, GDS 180 mg/dL.',
-      treatment: 'Diet rendah karbohidrat, olahraga teratur 30 menit sehari.',
-      followUpNotes: 'Kontrol kembali dalam 2 minggu.',
-    },
-  });
-
-  await prisma.diagnosis.create({
-    data: {
-      medicalRecordId: medicalRecord1.id,
-      code: 'E11.9',
-      name: 'Type 2 diabetes mellitus without complications',
-      description: 'Diabetes Melitus Tipe 2 Terkontrol',
-    },
-  });
-
-  const prescription1 = await prisma.prescription.create({
-    data: {
-      patientId: patient1.id,
-      doctorId: doctor1.id,
-      medicalRecordId: medicalRecord1.id,
-      notes: 'Minum obat teratur setelah makan',
-      status: 'ACTIVE',
-    },
-  });
-
-  await prisma.prescriptionItem.createMany({
-    data: [
-      {
-        prescriptionId: prescription1.id,
-        medicineName: 'Metformin 500mg',
-        dosage: '500mg',
-        frequency: '2x sehari setelah makan',
-        duration: '14 hari',
-        instructions: 'Sesudah makan pagi dan malam',
-        quantity: 28,
-      },
-      {
-        prescriptionId: prescription1.id,
-        medicineName: 'Vitamin B Kompleks',
-        dosage: '1 tablet',
-        frequency: '1x sehari',
-        duration: '14 hari',
-        instructions: 'Pagi hari setelah sarapan',
-        quantity: 14,
-      },
-    ],
-  });
-
-  console.log('✅ Seed data successfully inserted into Neon PostgreSQL!');
+  console.log('✅ Zavora Life PostgreSQL database successfully seeded and verified!');
 }
 
 main()

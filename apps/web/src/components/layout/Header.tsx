@@ -112,21 +112,23 @@ export function Header({ onMenuClick }: HeaderProps) {
               )}
             </button>
 
-            {/* Quick Doctor / Admin Portals on Desktop */}
-            <div className="hidden md:flex items-center gap-1.5 mr-1">
+            {/* Role-Specific Portal Link (Only visible when authenticated as Doctor or Admin) */}
+            {user?.role === "DOCTOR" && (
               <Link
                 href="/doctor"
-                className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition border border-slate-200 dark:border-slate-700"
+                className="hidden md:flex px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 transition border border-emerald-200 dark:border-emerald-800 mr-1"
               >
                 Portal Dokter
               </Link>
+            )}
+            {user?.role === "ADMIN" && (
               <Link
                 href="/admin"
-                className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition border border-slate-200 dark:border-slate-700"
+                className="hidden md:flex px-2.5 py-1.5 rounded-lg text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 transition border border-purple-200 dark:border-purple-800 mr-1"
               >
-                Admin
+                Admin Panel
               </Link>
-            </div>
+            )}
 
             {/* Notifications */}
             <div className="relative">

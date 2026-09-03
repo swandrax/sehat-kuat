@@ -31,7 +31,7 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
 
   if (!isOpen) return null;
 
-  const links = [
+  const baseLinks = [
     { name: "Dashboard", href: "/", icon: Activity },
     { name: "Fasilitas & Peta", href: "/facilities", icon: MapPin },
     { name: "Cari Dokter", href: "/doctors", icon: Stethoscope },
@@ -40,8 +40,12 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
     { name: "AI Health Assistant", href: "/ai-screening", icon: Bot },
     { name: "Artikel & Edukasi", href: "/articles", icon: BookOpen },
     { name: "Apotek & Marketplace", href: "/pharmacy", icon: ShoppingBag },
-    { name: "Portal Dokter", href: "/doctor", icon: Stethoscope },
-    { name: "Admin Control Center", href: "/admin", icon: Lock },
+  ];
+
+  const links = [
+    ...baseLinks,
+    ...(user?.role === "DOCTOR" ? [{ name: "Portal Dokter", href: "/doctor", icon: Stethoscope }] : []),
+    ...(user?.role === "ADMIN" ? [{ name: "Admin Control Center", href: "/admin", icon: Lock }] : []),
   ];
 
   return (
