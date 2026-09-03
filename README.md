@@ -16,37 +16,34 @@
 
 ```mermaid
 graph TB
-    subgraph Client Layer (PWA & Desktop)
-        MobilePWA["📱 Next.js 16 PWA Client (Mobile-First)<br/>- Leaflet OpenStreetMap<br/>- Real-time Traffic Tracks (🔵🟡🔴)<br/>- Printable A4 PDF Claim Generator"]
-        DoctorDesk["💻 Doctor Teleconsultation Dashboard<br/>- Medical Records (ICD-10)<br/>- Digital E-Prescriptions"]
+    subgraph ClientLayer ["Client Layer - PWA & Desktop"]
+        MobilePWA["Next.js 16 PWA Client - Mobile First<br/>- Leaflet OpenStreetMap<br/>- Real-time Traffic Tracks (Biru, Kuning, Merah)<br/>- Printable A4 PDF Claim Generator"]
+        DoctorDesk["Doctor Teleconsultation Dashboard<br/>- Medical Records & ICD-10<br/>- Digital E-Prescriptions"]
     end
 
-    subgraph Infrastructure & Load Balancing - Chandra Wijaya
-        Nginx["⚖️ Nginx Load Balancer (Reverse Proxy)<br/>- least_conn algorithm<br/>- proxy_buffering off (for SSE)<br/>- HTTP/1.1 Keep-Alive"]
+    subgraph InfraLayer ["Infrastructure & Load Balancing"]
+        Nginx["Nginx Load Balancer Reverse Proxy<br/>- least_conn algorithm<br/>- proxy_buffering off for SSE<br/>- HTTP/1.1 Keep-Alive"]
     end
 
-    subgraph Backend Cluster - Daffa Reivan Faturahman
-        Nest1["🚀 NestJS API Instance 1 (:4000)<br/>- Facilities Routing Engine<br/>- Insurance & Claims Controller"]
-        Nest2["🚀 NestJS API Instance 2 (:4000)<br/>- Auth & Role Guards<br/>- Medical Records & SSE"]
-        AutraAI["🧠 Autra-AI Agentic Policy Engine<br/>- ICD-10 Diagnosis Matching<br/>- Cashless Pre-Approval Verifier"]
+    subgraph BackendCluster ["Backend Cluster"]
+        Nest1["NestJS API Instance 1<br/>- Facilities Routing Engine<br/>- Insurance & Claims Controller"]
+        Nest2["NestJS API Instance 2<br/>- Auth & Role Guards<br/>- Medical Records & SSE Streams"]
+        AutraAI["Autra-AI Agentic Policy Engine<br/>- ICD-10 Diagnosis Matching<br/>- Cashless Pre-Approval Verifier"]
     end
 
-    subgraph Database Layer
-        NeonDB[("🐘 Neon PostgreSQL Serverless Cluster<br/>- 27 Normalized Tables + pgvector<br/>- Role-Based Access Control (RBAC)<br/>- Row Level Security & Audit Log")]
+    subgraph DatabaseLayer ["Database Layer"]
+        NeonDB[("Neon PostgreSQL Serverless Cluster<br/>- 27 Normalized Tables<br/>- Role-Based Access Control<br/>- Row Level Security & Audit Log")]
     end
 
-    MobilePWA -->|HTTPS / WSS| Nginx
-    DoctorDesk -->|HTTPS / WSS| Nginx
+    MobilePWA --> Nginx
+    DoctorDesk --> Nginx
 
-    Nginx -->|/api/ REST| Nest1
-    Nginx -->|/api/ REST| Nest2
-    Nginx -->|/api/v1/insurance/*| Nest1
-    Nginx -->|/api/v1/facilities/*| Nest1
-    Nginx -->|/api/v1/*stream SSE| Nest2
+    Nginx --> Nest1
+    Nginx --> Nest2
 
     Nest1 <--> AutraAI
-    Nest1 -->|Prisma Connection Pool| NeonDB
-    Nest2 -->|Prisma Connection Pool| NeonDB
+    Nest1 --> NeonDB
+    Nest2 --> NeonDB
 ```
 
 ---
@@ -58,14 +55,14 @@ graph TB
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Pasien as 👤 Pasien (Zavora Life)
-    participant Profile as 📱 Profile & Claims UI
-    participant AutraAI as 🧠 Autra-AI Policy Engine
-    participant InsService as 🏢 Insurance Service
-    participant PDFExport as 📄 PDF Generator (A4)
+    actor Pasien as Pasien Zavora Life
+    participant Profile as Profile & Claims UI
+    participant AutraAI as Autra-AI Policy Engine
+    participant InsService as Insurance Service
+    participant PDFExport as PDF Generator A4
 
     Pasien->>Profile: Buka Detail Polis Mitra (ZVR, ADM, FLR)
-    Profile->>InsService: GET /api/v1/insurance/policies/:code
+    Profile->>InsService: GET /api/v1/insurance/policies/code
     InsService-->>Profile: Return Info Polis & Sisa Plafon (Rp 238.5M)
 
     Pasien->>Profile: Unggah Bukti Kwitansi / Klik "Evaluasi Autra-AI"
@@ -95,27 +92,27 @@ Modul fasilitas kesehatan (`/facilities`) menggunakan algoritma geometri komputa
 
 ```mermaid
 flowchart TD
-    Start([📍 User Device Location]) --> Prescan[1. Spatial Bounding Box Prescan]
-    Prescan -->|Filter Koordinat ±0.15°| BoxFilter{O(log N + K)}
+    Start(["User Device Location"]) --> Prescan["1. Spatial Bounding Box Prescan"]
+    Prescan --> BoxFilter["Filter Koordinat Bounding Box"]
     
-    BoxFilter --> Haversine[2. Geodesic Haversine Formula]
-    Haversine -->|Hitung Jarak Permukaan Bumi| DistanceCalc{O(K)}
+    BoxFilter --> Haversine["2. Geodesic Haversine Formula"]
+    Haversine --> DistanceCalc["Hitung Jarak Permukaan Bumi"]
     
-    DistanceCalc --> Sort[3. Dual-Pivot Quicksort]
-    Sort -->|Urutkan Berdasarkan Jarak/Rating| RankedList{O(K log K)}
+    DistanceCalc --> Sort["3. Dual-Pivot Quicksort"]
+    Sort --> RankedList["Urutkan Faskes Terdekat"]
     
-    RankedList --> Routing[4. Traffic-Aware Graph Routing]
-    Routing -->|Rute Tercepat| Dijkstra[Dijkstra Min-Heap: O((V + E) log V)]
-    Routing -->|Rute Terpendek| AStar[A* Heuristic: O(b^d) ~ O(E)]
+    RankedList --> Routing["4. Traffic-Aware Graph Routing"]
+    Routing --> Dijkstra["Dijkstra: Rute Tercepat"]
+    Routing --> AStar["A-Star: Rute Terpendek"]
     
-    Dijkstra --> Polyline[5. Multi-Color Traffic Polyline Segmentation]
+    Dijkstra --> Polyline["5. Multi-Color Traffic Polyline Segmentation"]
     AStar --> Polyline
     
-    Polyline --> Blue[🔵 Biru: Lancar - Kecepatan 45 km/h]
-    Polyline --> Yellow[🟡 Kuning: Ramai Lancar - Kecepatan 25 km/h]
-    Polyline --> Red[🔴 Merah: Macet/Padat - Kecepatan 10 km/h]
+    Polyline --> Blue["Garis Biru: Lancar (45 km/h)"]
+    Polyline --> Yellow["Garis Kuning: Ramai Lancar (25 km/h)"]
+    Polyline --> Red["Garis Merah: Macet / Padat (10 km/h)"]
     
-    Blue --> Leaflet[🗺️ Render di Peta Leaflet OpenStreetMap]
+    Blue --> Leaflet["Render di Peta Leaflet OpenStreetMap"]
     Yellow --> Leaflet
     Red --> Leaflet
 ```
@@ -142,31 +139,23 @@ flowchart TD
 Sistem chatbot Zavora Life menerapkan pembatasan tampilan berbasis peran pengguna (*Role-Based Visibility*) dan siklus peninjauan umpan balik model (*RLHF Feedback Queue*):
 
 ```mermaid
-stateDiagram-v2
-    [*] --> CheckRole: Pengguna Mengakses Halaman
+flowchart TD
+    User([Pengguna Mengakses Halaman]) --> RoleCheck{Cek Role Pengguna}
+    
+    RoleCheck -->|GUEST| PublicPage[Beranda / Landing Page] --> ShowBot[Tampilkan Floating Chatbot]
+    RoleCheck -->|PATIENT| PatientPortal[Seluruh Portal Pasien] --> ShowBot
+    RoleCheck -->|DOCTOR| DoctorPortal[Portal Konsultasi Dokter] --> HideBot[Sembunyikan Chatbot]
+    RoleCheck -->|ADMIN| AdminPortal[Dashboard Manajemen Admin] --> HideBot
 
-    state CheckRole {
-        GUEST --> ShowChatbot: Beranda / Landing Page Publik
-        PATIENT --> ShowChatbot: Seluruh Portal Pasien (Dashboard, Faskes, Janji Temu)
-        DOCTOR --> HideChatbot: Sembunyikan dari Portal Konsultasi Dokter
-        ADMIN --> HideChatbot: Sembunyikan dari Dashboard Audit Admin
-    }
-
-    state ChatbotInteraction {
-        ShowChatbot --> AskQuestion: Pasien Mengirim Pesan Medis
-        AskQuestion --> AIResponse: OpenRouter / DeepSeek RAG Stream
-        AIResponse --> FeedbackState: Tampilkan Tombol LIKE / UNLIKE
-    }
-
-    state RLHFReviewQueue {
-        FeedbackState --> Unreviewed: UNREVIEWED (Default)
-        FeedbackState --> Clicked: Pasien Mengklik LIKE / UNLIKE
-        Clicked --> AnimateHeart: Animasi Feedback (300ms)
-        AnimateHeart --> StoredDB: Tersimpan di PostgreSQL (ChatFeedback)
-        StoredDB --> PendingReview: Status PENDING
-        PendingReview --> RetrainingDataset: TRAINING_ELIGIBLE (Disetujui Auditor Klinis)
-        PendingReview --> ExcludedDataset: TRAINING_EXCLUDED (Tidak Lolos Standar Medis)
-    }
+    ShowBot --> AskMsg[Pasien Bertanya Gejala Medis]
+    AskMsg --> AIResp[Respon Triase Medis AI]
+    AIResp --> Feedback[Tombol LIKE / UNLIKE]
+    
+    Feedback --> Click[Pasien Memberikan Feedback]
+    Click --> SaveDB[(Simpan di Database)]
+    SaveDB --> ReviewQueue[Review Queue Auditor Klinis]
+    ReviewQueue -->|Lolos Validasi| Retrain[Dataset Training RLHF]
+    ReviewQueue -->|Tidak Lolos| Exclude[Dataset Dikecualikan]
 ```
 
 ---
