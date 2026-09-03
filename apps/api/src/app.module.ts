@@ -21,6 +21,7 @@ import { AIModule } from './ai/ai.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { ConsultationsModule } from './consultations/consultations.module';
 import { AuditModule } from './audit/audit.module';
+import { FacilitiesModule } from './facilities/facilities.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { AuditModule } from './audit/audit.module';
     AIModule,
     WebhooksModule,
     ConsultationsModule,
+    FacilitiesModule,
   ],
   controllers: [AppController],
   providers: [

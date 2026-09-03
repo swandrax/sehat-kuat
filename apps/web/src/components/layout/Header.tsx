@@ -18,6 +18,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  MapPin,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -37,6 +38,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   const navLinks = [
     { name: "Dashboard", href: "/", icon: Activity },
+    { name: "Fasilitas & Peta", href: "/facilities", icon: MapPin },
     { name: "Dokter", href: "/doctors", icon: Stethoscope },
     { name: "Janji Temu", href: "/appointments", icon: Calendar },
     { name: "Health Tracker", href: "/tracker", icon: HeartPulse },

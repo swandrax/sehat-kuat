@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Stethoscope, Calendar, HeartPulse, Bot, User } from "lucide-react";
+import { Activity, Stethoscope, Calendar, HeartPulse, Bot, User, MapPin } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -9,11 +9,11 @@ export function BottomNav() {
 
   const navItems = [
     { label: "Home", href: "/", icon: Activity },
+    { label: "Fasilitas", href: "/facilities", icon: MapPin },
     { label: "Dokter", href: "/doctors", icon: Stethoscope },
     { label: "Janji Temu", href: "/appointments", icon: Calendar },
     { label: "Tracker", href: "/tracker", icon: HeartPulse },
     { label: "AI Health", href: "/ai-screening", icon: Bot },
-    { label: "Profil", href: "/profile/patient", icon: User },
   ];
 
   return (

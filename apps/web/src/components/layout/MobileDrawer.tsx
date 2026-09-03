@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Lock,
   LogOut,
+  MapPin,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -32,6 +33,7 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
 
   const links = [
     { name: "Dashboard", href: "/", icon: Activity },
+    { name: "Fasilitas & Peta", href: "/facilities", icon: MapPin },
     { name: "Cari Dokter", href: "/doctors", icon: Stethoscope },
     { name: "Janji Temu Saya", href: "/appointments", icon: Calendar },
     { name: "Health Tracker & Vital", href: "/tracker", icon: HeartPulse },
