@@ -1,5 +1,6 @@
 import { Injectable, MessageEvent } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { KnowledgeService } from './knowledge.service';
 import { Observable } from 'rxjs';
 
 export interface LogAIRequestDto {
@@ -15,7 +16,10 @@ export interface LogAIRequestDto {
 
 @Injectable()
 export class AIService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private knowledgeService: KnowledgeService,
+  ) {}
 
   async logRequest(dto: LogAIRequestDto) {
     return this.prisma.aIRequest.create({
@@ -60,13 +64,11 @@ export class AIService {
           if (index < simulatedWords.length) {
             subscriber.next({
               data: { token: simulatedWords[index], done: false },
-              type: 'ai-chunk',
             } as MessageEvent);
             index++;
           } else {
             subscriber.next({
               data: { done: true },
-              type: 'ai-chunk',
             } as MessageEvent);
             clearInterval(interval);
             subscriber.complete();
@@ -82,6 +84,8 @@ export class AIService {
 
         return () => clearInterval(interval);
       }
+
+      const ragContext = this.knowledgeService.getRAGContext(prompt);
 
       // Stream from OpenRouter API
       (async () => {
@@ -100,7 +104,8 @@ export class AIService {
                 {
                   role: 'system',
                   content:
-                    'Anda adalah Asisten AI KlinikSehat. Anda BUKAN seorang dokter. PENTING: Jangan pernah memberikan diagnosis medis definitif. Berikan penjelasan kesehatan yang sederhana, mudah dipahami, tidak menakut-nakuti. Selalu tambahkan disclaimer di akhir pesan bahwa saran ini bukan pengganti konsultasi dokter.',
+                    'Anda adalah Asisten AI KlinikSehat. Anda BUKAN seorang dokter. PENTING: Jangan pernah memberikan diagnosis medis definitif. Berikan penjelasan kesehatan yang sederhana, mudah dipahami, tidak menakut-nakuti. Selalu tambahkan disclaimer di akhir pesan bahwa saran ini bukan pengganti konsultasi dokter.' +
+                    (ragContext ? `\n\n[Konteks Basis Data Medis Resmi Indonesia]:${ragContext}` : ''),
                 },
                 { role: 'user', content: prompt },
               ],
@@ -128,8 +133,7 @@ export class AIService {
               if (dataStr === '[DONE]') {
                 subscriber.next({
                   data: { done: true },
-                  type: 'ai-chunk',
-                } as MessageEvent);
+                    } as MessageEvent);
                 subscriber.complete();
                 break;
               }
@@ -140,8 +144,7 @@ export class AIService {
                 if (token) {
                   subscriber.next({
                     data: { token, done: false },
-                    type: 'ai-chunk',
-                  } as MessageEvent);
+                        } as MessageEvent);
                 }
               } catch (e) {
                 // ignore unparseable chunks
@@ -187,6 +190,8 @@ export class AIService {
     summary: string;
     triageLevel: 'GREEN' | 'YELLOW' | 'RED';
     recommendedSpecialty: string;
+    matchedDiseases?: any[];
+    matchedMedicines?: any[];
     suggestedQuestions: string[];
     soapDraft: {
       subjective: string;
@@ -227,10 +232,15 @@ export class AIService {
       }
     }
 
+    const matchedDiseases = this.knowledgeService.searchDiseases(symptoms, 2);
+    const matchedMedicines = this.knowledgeService.searchMedicines(symptoms, 2);
+
     return {
       summary: `Pasien mengeluhkan: "${symptoms}". Triase awal menunjukkan prioritas ${triageLevel}.`,
       triageLevel,
       recommendedSpecialty,
+      matchedDiseases,
+      matchedMedicines,
       suggestedQuestions: [
         'Sudah berapa lama gejala ini dirasakan?',
         'Apakah ada riwayat alergi obat atau makanan?',

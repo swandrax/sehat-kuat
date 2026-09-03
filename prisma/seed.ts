@@ -282,7 +282,231 @@ async function main() {
     },
   });
 
-  console.log('✅ Zavora Life PostgreSQL database successfully seeded and verified!');
+  // 7. Insurance & Provider Roles
+  const hospitalProviderRole = await prisma.role.upsert({
+    where: { name: RoleType.HOSPITAL_PROVIDER },
+    update: {},
+    create: { name: RoleType.HOSPITAL_PROVIDER, description: 'Hospital / Healthcare Provider Staff' },
+  });
+
+  const insuranceAgentRole = await prisma.role.upsert({
+    where: { name: RoleType.INSURANCE_AGENT },
+    update: {},
+    create: { name: RoleType.INSURANCE_AGENT, description: 'Field Insurance Agent & Advisor' },
+  });
+
+  const claimsOfficerRole = await prisma.role.upsert({
+    where: { name: RoleType.CLAIMS_OFFICER },
+    update: {},
+    create: { name: RoleType.CLAIMS_OFFICER, description: 'Senior AUTRA Claims Adjudicator' },
+  });
+
+  // 8. Claims Officer User
+  const claimsOfficerUser = await prisma.user.upsert({
+    where: { email: 'claims.officer@zavoralife.id' },
+    update: {
+      passwordHash: defaultPasswordHash,
+      roleId: claimsOfficerRole.id,
+      name: 'Rian Pradana, AAIJ (Claims Officer)',
+    },
+    create: {
+      email: 'claims.officer@zavoralife.id',
+      passwordHash: defaultPasswordHash,
+      name: 'Rian Pradana, AAIJ (Claims Officer)',
+      phone: '+62811444555',
+      roleId: claimsOfficerRole.id,
+    },
+  });
+
+  // 9. Hospital Provider User
+  await prisma.user.upsert({
+    where: { email: 'provider@citraharapan.id' },
+    update: {
+      passwordHash: defaultPasswordHash,
+      roleId: hospitalProviderRole.id,
+      name: 'RS Citra Harapan Provider Portal',
+    },
+    create: {
+      email: 'provider@citraharapan.id',
+      passwordHash: defaultPasswordHash,
+      name: 'RS Citra Harapan Provider Portal',
+      phone: '+62811777888',
+      roleId: hospitalProviderRole.id,
+    },
+  });
+
+  // 10. Insurance Policies (Linked to Patient Budi Santoso)
+  const patientBudi = await prisma.patient.findUnique({
+    where: { userId: patientUser1.id },
+  });
+
+  const policy1 = await prisma.insurancePolicy.upsert({
+    where: { policyCode: 'ZVR-CORP-88912-ID' },
+    update: {
+      patientId: patientBudi?.id,
+      remainingLimit: 238500000,
+    },
+    create: {
+      patientId: patientBudi?.id,
+      provider: 'Zavora Life Protection Corporate',
+      policyCode: 'ZVR-CORP-88912-ID',
+      holderName: 'Budi Santoso',
+      cardNumber: '9920-4411-8891-0012',
+      status: 'ACTIVE',
+      isCashless: true,
+      annualLimit: 250000000,
+      remainingLimit: 238500000,
+      inpatientRoomLimitPerDay: 2000000,
+      outpatientCoveragePct: 100,
+      validUntil: '31 Des 2026',
+      network: ['Klinik Zavora Life', 'RS Citra Harapan', 'RS Ananda', 'RSUPN RSCM'],
+    },
+  });
+
+  await prisma.insurancePolicy.upsert({
+    where: { policyCode: 'ADM-HLTH-99412-JKT' },
+    update: {
+      patientId: patientBudi?.id,
+    },
+    create: {
+      patientId: patientBudi?.id,
+      provider: 'Admedika Healthcare',
+      policyCode: 'ADM-HLTH-99412-JKT',
+      holderName: 'Budi Santoso',
+      cardNumber: '0188-5522-3399-4411',
+      status: 'ACTIVE',
+      isCashless: true,
+      annualLimit: 150000000,
+      remainingLimit: 142000000,
+      inpatientRoomLimitPerDay: 1500000,
+      outpatientCoveragePct: 90,
+      validUntil: '15 Okt 2026',
+      network: ['Seluruh RS & Apotek Rekanan Admedika Indonesia'],
+    },
+  });
+
+  await prisma.insurancePolicy.upsert({
+    where: { policyCode: 'FLR-2026-77890-INA' },
+    update: {
+      patientId: patientBudi?.id,
+    },
+    create: {
+      patientId: patientBudi?.id,
+      provider: 'Fullerton Health Indonesia',
+      policyCode: 'FLR-2026-77890-INA',
+      holderName: 'Budi Santoso',
+      cardNumber: '4488-1122-9900-5566',
+      status: 'ACTIVE',
+      isCashless: true,
+      annualLimit: 180000000,
+      remainingLimit: 175000000,
+      inpatientRoomLimitPerDay: 1750000,
+      outpatientCoveragePct: 95,
+      validUntil: '20 Nov 2026',
+      network: ['Jaringan Fullerton Health & Laboratorium Prodia'],
+    },
+  });
+
+  // 11. Sample Historical Claim with AUTRA OCR and FDS Analysis
+  if (patientBudi) {
+    const sampleClaim = await prisma.claim.upsert({
+      where: { claimNumber: 'CLM-2026-00891' },
+      update: {},
+      create: {
+        claimNumber: 'CLM-2026-00891',
+        policyId: policy1.id,
+        patientId: patientBudi.id,
+        providerName: 'Klinik Zavora Life Pusat Jakarta',
+        diagnosisCode: 'E11.9',
+        diagnosisDescription: 'Type 2 diabetes mellitus without complications',
+        procedureCode: '99213',
+        treatmentDate: new Date('2026-08-20'),
+        invoiceNumber: 'INV/2026/08/ZVR-4412',
+        invoiceAmount: 1850000,
+        claimAmount: 1850000,
+        coveredAmount: 1850000,
+        patientPayableAmount: 0,
+        status: 'PAID',
+        autraConfidenceScore: 0.98,
+        fdsRiskScore: 8.5,
+        fdsDecision: 'AUTO_APPROVE',
+        preAuthCode: 'AUTRA-PREAUTH-88912-OK',
+        notes: 'Pre-approval klaim cashless disetujui 100% oleh Autra-AI Agentic Policy Engine.',
+        metadata: {
+          icd10Match: true,
+          cashlessApproved: true,
+          processedBy: 'AUTRA-Agent-v2.4',
+        },
+      },
+    });
+
+    const doc1 = await prisma.claimDocument.create({
+      data: {
+        claimId: sampleClaim.id,
+        documentType: 'MEDICAL_INVOICE',
+        fileName: 'invoice_klinik_zavora_aug2026.pdf',
+        fileUrl: 'https://storage.zavoralife.id/claims/CLM-2026-00891/invoice.pdf',
+        fileSize: 452100,
+        mimeType: 'application/pdf',
+        checksumSha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        ocrRawText: 'KLINIK ZAVORA LIFE PUSAT. No Invoice: INV/2026/08/ZVR-4412. Pasien: Budi Santoso. Diagnosa: E11.9 Diabetes Melitus. Biaya Konsultasi & Obat: Rp 1.850.000. Lunas.',
+        classification: 'INVOICE_OFFICIAL',
+        confidenceScore: 0.99,
+        securityScanStatus: 'CLEAN',
+      },
+    });
+
+    await prisma.claimExtractionTrace.createMany({
+      data: [
+        {
+          claimId: sampleClaim.id,
+          documentId: doc1.id,
+          entityKey: 'invoiceNumber',
+          entityValue: 'INV/2026/08/ZVR-4412',
+          sourceSnippet: 'No Invoice: INV/2026/08/ZVR-4412',
+          confidence: 0.99,
+        },
+        {
+          claimId: sampleClaim.id,
+          documentId: doc1.id,
+          entityKey: 'diagnosisCode',
+          entityValue: 'E11.9',
+          sourceSnippet: 'Diagnosa: E11.9 Diabetes Melitus',
+          confidence: 0.98,
+        },
+        {
+          claimId: sampleClaim.id,
+          documentId: doc1.id,
+          entityKey: 'totalAmount',
+          entityValue: '1850000',
+          sourceSnippet: 'Biaya Konsultasi & Obat: Rp 1.850.000',
+          confidence: 0.97,
+        },
+      ],
+    });
+
+    await prisma.fdsRiskAssessment.create({
+      data: {
+        claimId: sampleClaim.id,
+        riskScore: 8.5,
+        decision: 'AUTO_APPROVE',
+        reasonCodes: ['VELOCITY_NORMAL', 'INVOICE_AUTHENTIC', 'ICD10_COVERED', 'IN_NETWORK_PROVIDER'],
+        factors: {
+          velocityScore: 5.0,
+          documentAuthenticity: 98.0,
+          providerReputation: 100.0,
+          amountConsistency: 95.0,
+        },
+        velocitySummary: {
+          claimsInLast24h: 1,
+          totalAmountLast24h: 1850000,
+          claimsInLast7d: 1,
+        },
+      },
+    });
+  }
+
+  console.log('✅ Zavora Life PostgreSQL database successfully seeded and verified with AUTRA policies and FDS data!');
 }
 
 main()

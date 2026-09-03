@@ -15,6 +15,9 @@ enum RoleType {
   DOCTOR
   STAFF
   ADMIN
+  HOSPITAL_PROVIDER
+  INSURANCE_AGENT
+  CLAIMS_OFFICER
 }
 
 enum AppointmentStatus {
@@ -47,7 +50,44 @@ enum NotificationType {
   QUEUE_NOTIFICATION
   PAYMENT_NOTIFICATION
   PRESCRIPTION_NOTIFICATION
+  CLAIM_STATUS_UPDATE
   SYSTEM_NOTIFICATION
+}
+
+enum PolicyStatus {
+  ACTIVE
+  PENDING_VERIFICATION
+  SUSPENDED
+  EXPIRED
+}
+
+enum ClaimStatus {
+  DRAFT
+  SUBMITTED
+  OCR_PROCESSING
+  NLP_EXTRACTED
+  FDS_REVIEW
+  AUTO_APPROVED
+  MANUAL_REVIEW
+  REJECTED
+  PAID
+  CANCELLED
+}
+
+enum ClaimDocumentType {
+  MEDICAL_INVOICE
+  PHARMACY_RECEIPT
+  PRESCRIPTION
+  LAB_RESULT
+  REFERRAL_LETTER
+  DIAGNOSIS_SHEET
+  OTHER
+}
+
+enum FdsDecision {
+  AUTO_APPROVE
+  MANUAL_REVIEW
+  REJECT
 }
 
 enum AuditAction {
@@ -64,6 +104,12 @@ enum AuditAction {
   APPOINTMENT_UPDATED
   PAYMENT_CREATED
   ROLE_CHANGED
+  CLAIM_SUBMITTED
+  CLAIM_EVALUATED
+  CLAIM_APPROVED
+  CLAIM_REJECTED
+  POLICY_CONNECTED
+  FDS_ALERT_TRIGGERED
 }
 
 model Role {
@@ -148,6 +194,8 @@ model Patient {
   healthLogs       HealthLog[]
   allergies        Allergy[]
   consents         Consent[]
+  insurancePolicies InsurancePolicy[]
+  claims           Claim[]
 
   @@index([userId])
   @@map("patients")
@@ -525,3 +573,144 @@ model Consent {
   @@index([patientId])
   @@map("consents")
 }
+
+model InsurancePolicy {
+  id                      String       @id @default(uuid())
+  patientId               String?
+  patient                 Patient?     @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  provider                String       // e.g. "Zavora Life Protection Corporate"
+  policyCode              String       @unique // e.g. "ZVR-CORP-88912-ID"
+  holderName              String
+  cardNumber              String
+  status                  PolicyStatus @default(ACTIVE)
+  isCashless              Boolean      @default(true)
+  annualLimit             Float
+  remainingLimit          Float
+  inpatientRoomLimitPerDay Float       @default(2000000)
+  outpatientCoveragePct   Float        @default(100)
+  validUntil              String       // e.g. "31 Des 2026"
+  network                 String[]
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+
+  claims                  Claim[]
+
+  @@index([patientId])
+  @@index([policyCode])
+  @@map("insurance_policies")
+}
+
+model Claim {
+  id                    String        @id @default(uuid())
+  claimNumber           String        @unique // e.g. "CLM-2026-00891"
+  policyId              String
+  policy                InsurancePolicy @relation(fields: [policyId], references: [id])
+  patientId             String
+  patient               Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  providerName          String        // e.g. "Klinik Zavora Life Pusat"
+  diagnosisCode         String?       // ICD-10 e.g. "E11.9"
+  diagnosisDescription  String?
+  procedureCode         String?
+  treatmentDate         DateTime      @default(now())
+  invoiceNumber         String?       // e.g. "INV/2026/09/8812"
+  invoiceAmount         Float
+  claimAmount           Float
+  coveredAmount         Float         @default(0)
+  patientPayableAmount  Float         @default(0)
+  status                ClaimStatus   @default(SUBMITTED)
+  autraConfidenceScore  Float?        // 0.0 - 1.0 (e.g. 0.98)
+  fdsRiskScore          Float?        // 0.0 - 100.0 (e.g. 12.5)
+  fdsDecision           FdsDecision?
+  preAuthCode           String?       // e.g. "AUTRA-PREAUTH-88912-OK"
+  rejectionReason       String?
+  notes                 String?
+  metadata              Json?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  documents             ClaimDocument[]
+  extractionTraces      ClaimExtractionTrace[]
+  riskAssessments       FdsRiskAssessment[]
+
+  @@index([patientId])
+  @@index([policyId])
+  @@index([status])
+  @@index([invoiceNumber])
+  @@index([createdAt])
+  @@map("claims")
+}
+
+model ClaimDocument {
+  id                  String            @id @default(uuid())
+  claimId             String
+  claim               Claim             @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  documentType        ClaimDocumentType @default(MEDICAL_INVOICE)
+  fileName            String
+  fileUrl             String
+  fileSize            Int?
+  mimeType            String?
+  checksumSha256      String?
+  ocrRawText          String?           @db.Text
+  ocrExtractedJson    Json?
+  classification      String?
+  confidenceScore     Float?
+  securityScanStatus  String            @default("CLEAN")
+  createdAt           DateTime          @default(now())
+
+  extractionTraces    ClaimExtractionTrace[]
+
+  @@index([claimId])
+  @@index([checksumSha256])
+  @@map("claim_documents")
+}
+
+model ClaimExtractionTrace {
+  id              String         @id @default(uuid())
+  claimId         String
+  claim           Claim          @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  documentId      String?
+  document        ClaimDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  entityKey       String         // e.g. "diagnosis", "amount", "invoiceNumber"
+  entityValue     String
+  sourceSnippet   String?
+  confidence      Float          @default(1.0)
+  boundingCoordinates Json?
+  createdAt       DateTime       @default(now())
+
+  @@index([claimId])
+  @@index([entityKey])
+  @@map("claim_extraction_traces")
+}
+
+model FdsRiskAssessment {
+  id              String      @id @default(uuid())
+  claimId         String
+  claim           Claim       @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  riskScore       Float       // 0 - 100
+  decision        FdsDecision
+  reasonCodes     String[]    // e.g. ["VELOCITY_OK", "INVOICE_UNIQUE", "DIAGNOSIS_MATCH"]
+  factors         Json?       // detailed factor scores
+  velocitySummary Json?       // counts within 1h, 24h, 7d
+  assessedAt      DateTime    @default(now())
+
+  @@index([claimId])
+  @@index([decision])
+  @@index([assessedAt])
+  @@map("fds_risk_assessments")
+}
+
+model FdsVelocityLog {
+  id             String   @id @default(uuid())
+  key            String   // Redis/Storage key e.g. "fds:velocity:patient:pat-1:24h"
+  entityType     String   // "PATIENT" | "PROVIDER" | "DEVICE" | "IP"
+  entityId       String
+  amount         Float?
+  action         String   // "CLAIM_SUBMISSION"
+  windowSeconds  Int      // 86400
+  createdAt      DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("fds_velocity_logs")
+}
+

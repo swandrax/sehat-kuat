@@ -18,11 +18,16 @@ import { PaymentsModule } from './payments/payments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
 import { AIModule } from './ai/ai.module';
+import { MLModule } from './ml/ml.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { ConsultationsModule } from './consultations/consultations.module';
 import { AuditModule } from './audit/audit.module';
 import { FacilitiesModule } from './facilities/facilities.module';
 import { InsuranceModule } from './insurance/insurance.module';
+import { RedisModule } from './redis/redis.module';
+import { SecurityModule } from './security/security.module';
+import { AutraModule } from './autra/autra.module';
+import { FdsModule } from './fds/fds.module';
 
 @Module({
   imports: [
@@ -31,6 +36,10 @@ import { InsuranceModule } from './insurance/insurance.module';
       limit: 100,
     }]),
     PrismaModule,
+    RedisModule,
+    SecurityModule,
+    AutraModule,
+    FdsModule,
     EventsModule,
     AuthModule,
     AuditModule,
@@ -46,6 +55,7 @@ import { InsuranceModule } from './insurance/insurance.module';
     NotificationsModule,
     ChatModule,
     AIModule,
+    MLModule,
     WebhooksModule,
     ConsultationsModule,
     FacilitiesModule,

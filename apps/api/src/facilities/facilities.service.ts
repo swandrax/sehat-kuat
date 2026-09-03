@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   CreateFacilityDto,
   FacilityType,
@@ -26,9 +28,29 @@ export interface HealthcareFacility {
   services: string[];
 }
 
+export interface RegionItem {
+  id: string;
+  name: string;
+  parentId?: string;
+}
+
+export interface HealthWorkerStat {
+  province: string;
+  medicalWorkers: string;
+  midwives: string;
+  pharmacists: string;
+  total: string;
+}
+
 @Injectable()
-export class FacilitiesService {
+export class FacilitiesService implements OnModuleInit {
+  private readonly logger = new Logger(FacilitiesService.name);
   private readonly geoapifyKey = '0e6b74008bb54855ad22db81f7d1d84f';
+
+  private provinces: RegionItem[] = [];
+  private regencies: RegionItem[] = [];
+  private districts: RegionItem[] = [];
+  private healthWorkerStats: HealthWorkerStat[] = [];
 
   // Seed initial high-quality healthcare facilities matching the user's interface
   private facilities: HealthcareFacility[] = [
@@ -539,5 +561,133 @@ export class FacilitiesService {
 
   private deg2rad(deg: number): number {
     return deg * (Math.PI / 180);
+  }
+
+  onModuleInit() {
+    this.loadRegionalData();
+  }
+
+  private loadRegionalData() {
+    const csvDir = path.resolve(process.cwd(), '../../csv-data');
+
+    // 1. Provinces
+    const provPath = path.join(csvDir, 'provinces.csv');
+    if (fs.existsSync(provPath)) {
+      try {
+        const lines = fs.readFileSync(provPath, 'utf-8').split('\n');
+        this.provinces = lines
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .map((l) => {
+            const [id, name] = l.split(',');
+            return { id: id?.trim(), name: name?.trim() };
+          })
+          .filter((p) => p.id && p.name);
+        this.logger.log(`Loaded ${this.provinces.length} provinces.`);
+      } catch (e) {
+        this.logger.error(`Error loading provinces: ${e}`);
+      }
+    }
+
+    // 2. Regencies
+    const regPath = path.join(csvDir, 'regencies.csv');
+    if (fs.existsSync(regPath)) {
+      try {
+        const lines = fs.readFileSync(regPath, 'utf-8').split('\n');
+        this.regencies = lines
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .map((l): RegionItem | null => {
+            const parts = l.split(',');
+            if (parts.length >= 3) {
+              return {
+                id: parts[0]?.trim() || '',
+                parentId: parts[1]?.trim(),
+                name: parts[2]?.trim() || '',
+              };
+            }
+            return null;
+          })
+          .filter((r): r is RegionItem => r !== null && !!r.id);
+        this.logger.log(`Loaded ${this.regencies.length} regencies.`);
+      } catch (e) {
+        this.logger.error(`Error loading regencies: ${e}`);
+      }
+    }
+
+    // 3. Districts
+    const distPath = path.join(csvDir, 'districts.csv');
+    if (fs.existsSync(distPath)) {
+      try {
+        const lines = fs.readFileSync(distPath, 'utf-8').split('\n');
+        this.districts = lines
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .map((l): RegionItem | null => {
+            const parts = l.split(',');
+            if (parts.length >= 3) {
+              return {
+                id: parts[0]?.trim() || '',
+                parentId: parts[1]?.trim(),
+                name: parts[2]?.trim() || '',
+              };
+            }
+            return null;
+          })
+          .filter((d): d is RegionItem => d !== null && !!d.id);
+        this.logger.log(`Loaded ${this.districts.length} districts.`);
+      } catch (e) {
+        this.logger.error(`Error loading districts: ${e}`);
+      }
+    }
+
+    // 4. Health Worker Stats
+    const statsPath = path.join(csvDir, 'Jumlah Tenaga Kesehatan Menurut Provinsi, 2025.csv');
+    if (fs.existsSync(statsPath)) {
+      try {
+        const lines = fs.readFileSync(statsPath, 'utf-8').split('\n');
+        // Skip header
+        this.healthWorkerStats = lines
+          .slice(1)
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .map((l) => {
+            const parts = l.split(',');
+            return {
+              province: parts[0]?.replace(/^[\uFEFF]/, '').trim() || '',
+              medicalWorkers: parts[1]?.trim() || '0',
+              midwives: parts[2]?.trim() || '0',
+              pharmacists: parts[3]?.trim() || '0',
+              total: parts[parts.length - 1]?.trim() || '0',
+            };
+          })
+          .filter((s) => s.province);
+        this.logger.log(`Loaded health stats for ${this.healthWorkerStats.length} provinces.`);
+      } catch (e) {
+        this.logger.error(`Error loading health stats: ${e}`);
+      }
+    }
+  }
+
+  getProvinces(): RegionItem[] {
+    return this.provinces;
+  }
+
+  getRegencies(provinceId?: string): RegionItem[] {
+    if (provinceId) {
+      return this.regencies.filter((r) => r.parentId === provinceId);
+    }
+    return this.regencies;
+  }
+
+  getDistricts(regencyId?: string): RegionItem[] {
+    if (regencyId) {
+      return this.districts.filter((d) => d.parentId === regencyId);
+    }
+    return this.districts;
+  }
+
+  getHealthWorkerStats(): HealthWorkerStat[] {
+    return this.healthWorkerStats;
   }
 }

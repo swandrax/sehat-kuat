@@ -78,13 +78,17 @@ function AIScreeningContent() {
       userMessage.content,
     )}${userIdQuery}`;
 
-    eventSourceRef.current = new EventSource(streamUrl);
+    const es = new EventSource(streamUrl);
+    eventSourceRef.current = es;
 
-    eventSourceRef.current.onmessage = (event) => {
+    let receivedAnyToken = false;
+
+    const handleData = (event: MessageEvent) => {
       try {
-        const data = JSON.parse(event.data);
+        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
 
-        if (data.token) {
+        if (data?.token) {
+          receivedAnyToken = true;
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === aiMessageId ? { ...msg, content: msg.content + data.token } : msg,
@@ -92,30 +96,42 @@ function AIScreeningContent() {
           );
         }
 
-        if (data.done) {
+        if (data?.done) {
           if (eventSourceRef.current) {
             eventSourceRef.current.close();
+            eventSourceRef.current = null;
           }
           setIsStreaming(false);
         }
       } catch (error) {
-        console.error("Error parsing SSE data", error);
+        console.warn("Error parsing SSE data", error);
       }
     };
 
-    eventSourceRef.current.onerror = (error) => {
-      console.error("SSE Error:", error);
+    es.onmessage = handleData;
+    es.addEventListener("ai-chunk", handleData as EventListener);
+    es.addEventListener("message", handleData as EventListener);
+
+    es.onerror = () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
       setIsStreaming(false);
+
+      // If tokens were already received, closing the connection is normal end of stream
+      if (receivedAnyToken) return;
+
+      // Gracefully provide clinical triage fallback when API connection cannot be established
+      const fallbackResponse =
+        "Berdasarkan keluhan yang Anda sampaikan, disarankan untuk menjaga istirahat yang cukup, penuhi kebutuhan cairan, dan buat janji temu dengan dokter spesialis kami di Zavora Life untuk evaluasi medis lebih lanjut.";
+
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === aiMessageId && msg.content === ""
             ? {
                 ...msg,
-                content:
-                  "Berdasarkan keluhan yang Anda sampaikan, disarankan untuk menjaga istirahat yang cukup, penuhi kebutuhan cairan, dan buat janji temu dengan dokter spesialis kami di Zavora Life untuk evaluasi medis lebih lanjut.",
+                content: fallbackResponse,
               }
             : msg,
         ),

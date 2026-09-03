@@ -3,7 +3,7 @@ import { Subject, Observable } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 
 export interface AppEvent {
-  type: 'QUEUE_UPDATED' | 'NOTIFICATION_CREATED' | 'APPOINTMENT_STATUS_CHANGED';
+  type: 'QUEUE_UPDATED' | 'NOTIFICATION_CREATED' | 'APPOINTMENT_STATUS_CHANGED' | 'CLAIM_STATUS_UPDATE';
   targetId?: string; // doctorId or userId
   payload: any;
 }

@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { doctorsApi, appointmentsApi, authApi } from "@/lib/api";
+import { doctorsApi, appointmentsApi, authApi, type Appointment } from "@/lib/api";
 import {
   ArrowLeft,
   Calendar as CalendarIcon,
@@ -16,7 +16,16 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
+interface DoctorSchedule {
+  id: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  maxPatients?: number;
+}
+
+type QueueInfo = NonNullable<Appointment["queue"]>;
 
 const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
@@ -26,21 +35,20 @@ export default function DoctorDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const router = useRouter();
 
-  const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<DoctorSchedule | null>(null);
   const [appointmentDate, setAppointmentDate] = useState(
     new Date().toISOString().split("T")[0],
   );
   const [notes, setNotes] = useState("");
-  const [successQueue, setSuccessQueue] = useState<any>(null);
+  const [successQueue, setSuccessQueue] = useState<QueueInfo | null>(null);
 
   // 1. Fetch Doctor Details
   const { data: doctor, isLoading: isDocLoading } = useQuery({
     queryKey: ["doctor", id],
     queryFn: async () => {
       const res = await doctorsApi.getById(id);
-      return res.data;
+      return res.data ?? null;
     },
   });
 
@@ -49,13 +57,13 @@ export default function DoctorDetailPage({
     queryKey: ["currentUser"],
     queryFn: async () => {
       const res = await authApi.getMe();
-      return res.data;
+      return res.data ?? null;
     },
   });
 
   // 3. Appointment Booking Mutation
   const bookingMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<Appointment> => {
       if (!currentUser?.patient?.id) {
         throw new Error("Silakan masuk sebagai pasien untuk membuat janji temu");
       }
@@ -73,19 +81,20 @@ export default function DoctorDetailPage({
         notes: notes || undefined,
       });
 
-      if (!res.success) {
+      if (!res.success || !res.data) {
         throw new Error(res.error?.message || "Gagal membuat janji temu");
       }
 
       return res.data;
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: Appointment) => {
       if (data?.queue) {
         setSuccessQueue(data.queue);
       }
     },
-    onError: (err: any) => {
-      alert(err.message || "Gagal membuat janji");
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : "Gagal membuat janji";
+      alert(message);
     },
   });
 
@@ -255,7 +264,7 @@ export default function DoctorDetailPage({
           </label>
           {doctor.schedules && doctor.schedules.length > 0 ? (
             <div className="grid grid-cols-2 gap-2">
-              {doctor.schedules.map((sch: any) => {
+              {doctor.schedules.map((sch: DoctorSchedule) => {
                 const isSelected = selectedSchedule?.id === sch.id;
                 return (
                   <button

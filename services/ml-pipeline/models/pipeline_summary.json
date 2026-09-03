@@ -1,0 +1,7 @@
+{
+  "status": "SUCCESS",
+  "symptom_classifier_accuracy": 1.0,
+  "health_risk_accuracy": 1.0,
+  "dpo_pairs_analyzed": 10,
+  "pipeline_completed_at": "2026-09-03T16:02:58.058050+00:00"
+}

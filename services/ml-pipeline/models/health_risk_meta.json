@@ -1,0 +1,30 @@
+{
+  "model_type": "RandomForestClassifier",
+  "accuracy": 1.0,
+  "trained_samples": 300,
+  "trained_at": "2026-09-03T16:02:58.043318+00:00",
+  "features": [
+    "age",
+    "systolic",
+    "diastolic",
+    "cond_Asthma",
+    "cond_Diabetes",
+    "cond_Healthy",
+    "cond_Hypertension",
+    "cond_Tuberculosis"
+  ],
+  "feature_importances": {
+    "age": 0.3926,
+    "systolic": 0.0711,
+    "diastolic": 0.0628,
+    "cond_Asthma": 0.0524,
+    "cond_Diabetes": 0.1415,
+    "cond_Healthy": 0.0696,
+    "cond_Hypertension": 0.1359,
+    "cond_Tuberculosis": 0.0742
+  },
+  "classes": [
+    "Standard",
+    "High Risk"
+  ]
+}

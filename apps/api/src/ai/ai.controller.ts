@@ -22,12 +22,33 @@ import {
   SubmitAIFeedbackDto,
 } from './dto/feedback.dto';
 
+import { KnowledgeService } from './knowledge.service';
+
 @Controller('api/v1/ai')
 export class AIController {
   constructor(
     private readonly aiService: AIService,
     private readonly feedbackService: AIFeedbackService,
+    private readonly knowledgeService: KnowledgeService,
   ) {}
+
+  @Get('knowledge/diseases')
+  searchDiseases(@Query('q') query?: string, @Query('limit') limit?: string) {
+    return this.knowledgeService.searchDiseases(query || '', limit ? parseInt(limit, 10) : 10);
+  }
+
+  @Get('knowledge/medicines')
+  searchMedicines(@Query('q') query?: string, @Query('limit') limit?: string) {
+    return this.knowledgeService.searchMedicines(query || '', limit ? parseInt(limit, 10) : 10);
+  }
+
+  @Get('knowledge/rag')
+  getRAGContext(@Query('prompt') prompt: string) {
+    return {
+      prompt,
+      context: this.knowledgeService.getRAGContext(prompt || ''),
+    };
+  }
 
   @Get('telemetry')
   @UseGuards(AuthGuard, RolesGuard)

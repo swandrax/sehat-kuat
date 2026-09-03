@@ -24,6 +24,26 @@ export class FacilitiesController {
     return this.facilitiesService.findAll(query);
   }
 
+  @Get('regions/provinces')
+  getProvinces() {
+    return this.facilitiesService.getProvinces();
+  }
+
+  @Get('regions/regencies')
+  getRegencies(@Query('provinceId') provinceId?: string) {
+    return this.facilitiesService.getRegencies(provinceId);
+  }
+
+  @Get('regions/districts')
+  getDistricts(@Query('regencyId') regencyId?: string) {
+    return this.facilitiesService.getDistricts(regencyId);
+  }
+
+  @Get('stats/health-workers')
+  getHealthWorkerStats() {
+    return this.facilitiesService.getHealthWorkerStats();
+  }
+
   @Get('route')
   calculateRoute(@Query() query: QueryRouteDto) {
     return this.facilitiesService.calculateRoute(query);

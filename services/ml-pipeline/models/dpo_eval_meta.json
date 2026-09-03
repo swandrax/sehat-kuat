@@ -1,0 +1,14 @@
+{
+  "total_pairs": 10,
+  "avg_chosen_chars": 119.2,
+  "avg_rejected_chars": 78.4,
+  "specialties_covered": [
+    "bedah",
+    "onkologi",
+    "saraf",
+    "pulmonologi",
+    "kardiologi"
+  ],
+  "verified_at": "2026-09-03T16:02:58.056899+00:00",
+  "alignment_status": "READY_FOR_RLHF_DPO"
+}

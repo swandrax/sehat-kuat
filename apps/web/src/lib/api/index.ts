@@ -11,3 +11,5 @@ export * from './prescriptions';
 export * from './payments';
 export * from './notifications';
 export * from './ai';
+export * from './insurance';
+export * from './facilities';
