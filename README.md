@@ -1,6 +1,6 @@
-# 🏥 KlinikSehat — Production Healthcare Platform
+# 🏥 Zavora Life — All-in-One Healthcare & Agentic Insurance Platform
 
-> **Mobile-First Healthcare Platform** powered by **Next.js PWA**, **NestJS**, **Neon PostgreSQL**, **OpenRouter AI**, and **Nginx Load Balancer**.
+> **Mobile-First Healthcare Platform** powered by **Next.js PWA**, **NestJS**, **Neon PostgreSQL**, **Autra-AI Agentic Policies**, **Leaflet Computational Geometry**, and **Nginx Load Balancer**.
 
 ---
 
@@ -16,9 +16,9 @@
 
 ```mermaid
 graph TB
-    subgraph Client Layer
-        MobilePWA["📱 Next.js PWA Client (Mobile First)"]
-        DoctorDesk["💻 Doctor Teleconsultation Dashboard"]
+    subgraph Client Layer (PWA & Desktop)
+        MobilePWA["📱 Next.js 16 PWA Client (Mobile-First)<br/>- Leaflet OpenStreetMap<br/>- Real-time Traffic Tracks (🔵🟡🔴)<br/>- Printable A4 PDF Claim Generator"]
+        DoctorDesk["💻 Doctor Teleconsultation Dashboard<br/>- Medical Records (ICD-10)<br/>- Digital E-Prescriptions"]
     end
 
     subgraph Infrastructure & Load Balancing - Chandra Wijaya
@@ -26,14 +26,13 @@ graph TB
     end
 
     subgraph Backend Cluster - Daffa Reivan Faturahman
-        Nest1["🚀 NestJS API Instance 1 (:4000)"]
-        Nest2["🚀 NestJS API Instance 2 (:4000)"]
-        FastAPIAI["🧠 FastAPI AI & RAG Engine (:8000)"]
-        RedisCache["⚡ Redis / Upstash (Queue & PubSub)"]
+        Nest1["🚀 NestJS API Instance 1 (:4000)<br/>- Facilities Routing Engine<br/>- Insurance & Claims Controller"]
+        Nest2["🚀 NestJS API Instance 2 (:4000)<br/>- Auth & Role Guards<br/>- Medical Records & SSE"]
+        AutraAI["🧠 Autra-AI Agentic Policy Engine<br/>- ICD-10 Diagnosis Matching<br/>- Cashless Pre-Approval Verifier"]
     end
 
     subgraph Database Layer
-        NeonDB[("🐘 Neon PostgreSQL Serverless Cluster<br/>- Pooling Endpoint (ep-wild-night-az8ymtjf-pooler)<br/>- 27 Normalized Tables + pgvector<br/>- RBAC & Row Level Isolation")]
+        NeonDB[("🐘 Neon PostgreSQL Serverless Cluster<br/>- 27 Normalized Tables + pgvector<br/>- Role-Based Access Control (RBAC)<br/>- Row Level Security & Audit Log")]
     end
 
     MobilePWA -->|HTTPS / WSS| Nginx
@@ -41,156 +40,201 @@ graph TB
 
     Nginx -->|/api/ REST| Nest1
     Nginx -->|/api/ REST| Nest2
-    Nginx -->|/api/v1/*stream SSE| Nest1
-    Nginx -->|/ai-engine/| FastAPIAI
+    Nginx -->|/api/v1/insurance/*| Nest1
+    Nginx -->|/api/v1/facilities/*| Nest1
+    Nginx -->|/api/v1/*stream SSE| Nest2
 
-    Nest1 <--> RedisCache
-    Nest2 <--> RedisCache
-
+    Nest1 <--> AutraAI
     Nest1 -->|Prisma Connection Pool| NeonDB
     Nest2 -->|Prisma Connection Pool| NeonDB
-    FastAPIAI -->|pgvector Embeddings| NeonDB
 ```
 
 ---
 
-## 🔐 Security Algorithms & Core Engineering Methods
+## 🤖 1. Autra-AI Agentic Claims Insurance Policies Engine
 
-### 1. Password Hashing (Argon2id)
-* **Algorithm**: `Argon2id` (v=19)
-* **Parameters**: `timeCost: 3`, `memoryCost: 65536 KB (64 MB)`, `parallelism: 4`
-* **Protection**: Resistant to GPU/ASIC cracking and side-channel timing attacks.
-* **Storage**: Cryptographically salted hash strings stored in the Neon PostgreSQL `users` table.
+**Autra-AI** acts as an autonomous insurance verification agent integrated directly into the patient profile and claims workflow. It automatically correlates patient medical records, clinical resumes, and pharmacy invoices with insurer policy clauses.
 
-### 2. Session & Auth Architecture
-* **Tokens**: JSON Web Tokens (JWT) signed with HMAC-SHA256.
-* **Transport**: Set as `HttpOnly`, `SameSite=Strict`, `Secure` cookies to prevent XSS credential theft.
-* **Geolocation Security**: Mandatory GPS coordinate consent flow (`PUT /api/v1/users/location`) immediately following user registration and login.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Pasien as 👤 Pasien (Zavora Life)
+    participant Profile as 📱 Profile & Claims UI
+    participant AutraAI as 🧠 Autra-AI Policy Engine
+    participant InsService as 🏢 Insurance Service
+    participant PDFExport as 📄 PDF Generator (A4)
 
-### 3. Concurrency-Safe Queue & Atomic Booking Algorithm
-* **Transaction Engine**: Managed inside `prisma.$transaction`.
-* **Locking Strategy**: Evaluates schedule overlaps and assigns sequential queue numbers (`MAX(queueNumber) + 1`) per doctor per calendar day within an isolated database transaction to eliminate race conditions and double-booking.
+    Pasien->>Profile: Buka Detail Polis Mitra (ZVR, ADM, FLR)
+    Profile->>InsService: GET /api/v1/insurance/policies/:code
+    InsService-->>Profile: Return Info Polis & Sisa Plafon (Rp 238.5M)
 
-### 4. Server-Sent Events (SSE) Real-Time Streaming
-* **Mechanism**: HTTP/1.1 persistent streaming powered by RxJS `Observable` and NestJS `@Sse()`.
-* **Endpoints**:
-  * `/api/v1/queues/stream/:doctorId`: Real-time queue ticket ticker.
-  * `/api/v1/notifications/stream/:userId`: Instant push alerts without polling.
-  * `/api/v1/ai/consultation/stream`: Token-by-token streaming AI responses from OpenRouter.
+    Pasien->>Profile: Unggah Bukti Kwitansi / Klik "Evaluasi Autra-AI"
+    Profile->>AutraAI: POST /api/v1/insurance/evaluate-claim (ICD-10, Biaya)
+    Note over AutraAI: Audit Algoritma:<br/>1. Cek Plafon Tahunan & Plafon Kamar VIP<br/>2. Verifikasi ICD-10 (E11.9 Diabetes)<br/>3. Evaluasi Klausul Cashless 100%
+    AutraAI-->>Profile: Return Pre-Approval & Kode Otorisasi (AUTRA-PREAUTH-88912-OK)
 
-### 5. Idempotent Webhook Processing
-* **Endpoint**: `POST /api/v1/webhooks/payment`
-* **Protection**: Transaction reference validation prevents double-processing on network retries. Automatically reconciles appointment statuses and pushes SSE notifications.
+    Pasien->>Profile: Klik "Export ke Dokumen Klaim (PDF)"
+    Profile->>PDFExport: Render Lembar Resume Medis & Pernyataan Klaim
+    PDFExport-->>Pasien: Cetak / Simpan PDF A4 Resmi (window.print())
+```
 
-### 6. N+1 Query Prevention for Data Tables
-* **Relational Prefetching**: Uses eager-batching queries in Prisma with single-roundtrip joins.
-* **Indexes**: Neon PostgreSQL indexes on `userId`, `doctorId`, `patientId`, `specialization`, and `appointmentDate` ensure $O(\log N)$ fast pagination.
+### Format Dokumen Klaim PDF Resmi:
+* **Kop Surat Resmi**: Zavora Life Healthcare System & Lisensi Kemenkes RI No. 881/YANKES/2024.
+* **Kode Asuransi (Insurance Code)**: Kode unik polis terdaftar (`ZVR-CORP-88912-ID`, `ADM-HLTH-99412-JKT`, `FLR-2026-77890-INA`).
+* **Identitas Pasien**: Nama Lengkap, NIK, No Rekam Medis (`RM-2026-008912`), Golongan Darah.
+* **Resume Klinis & Dokter Penanggung Jawab**: dr. Andi Setiawan, Sp.PD (SIP: 503/442-Dinkes/2024).
+* **Kode Diagnosis ICD-10**: Validasi diagnosa primer & sekunder terstandarisasi.
+* **Rincian Biaya Medis & Obat**: Breakdown konsultasi, laboratorium, dan e-resep farmasi.
+* **Cap Digital & QR Code Autra-AI**: QR verification dan kode pre-auth valid.
 
 ---
 
-## 📂 Project Structure
+## 🧭 2. Facilities Routing & Computational Geometry (Big-O Architecture)
+
+Modul fasilitas kesehatan (`/facilities`) menggunakan algoritma geometri komputasi dan optimasi rute lalu lintas di belakang layar (*background system*) tanpa membebani antarmuka pengguna:
+
+```mermaid
+flowchart TD
+    Start([📍 User Device Location]) --> Prescan[1. Spatial Bounding Box Prescan]
+    Prescan -->|Filter Koordinat ±0.15°| BoxFilter{O(log N + K)}
+    
+    BoxFilter --> Haversine[2. Geodesic Haversine Formula]
+    Haversine -->|Hitung Jarak Permukaan Bumi| DistanceCalc{O(K)}
+    
+    DistanceCalc --> Sort[3. Dual-Pivot Quicksort]
+    Sort -->|Urutkan Berdasarkan Jarak/Rating| RankedList{O(K log K)}
+    
+    RankedList --> Routing[4. Traffic-Aware Graph Routing]
+    Routing -->|Rute Tercepat| Dijkstra[Dijkstra Min-Heap: O((V + E) log V)]
+    Routing -->|Rute Terpendek| AStar[A* Heuristic: O(b^d) ~ O(E)]
+    
+    Dijkstra --> Polyline[5. Multi-Color Traffic Polyline Segmentation]
+    AStar --> Polyline
+    
+    Polyline --> Blue[🔵 Biru: Lancar - Kecepatan 45 km/h]
+    Polyline --> Yellow[🟡 Kuning: Ramai Lancar - Kecepatan 25 km/h]
+    Polyline --> Red[🔴 Merah: Macet/Padat - Kecepatan 10 km/h]
+    
+    Blue --> Leaflet[🗺️ Render di Peta Leaflet OpenStreetMap]
+    Yellow --> Leaflet
+    Red --> Leaflet
+```
+
+### Analisis Kompleksitas Komputasi (Big-O Complexity):
+| Tahapan | Algoritma | Kompleksitas Waktu | Kompleksitas Ruang | Catatan Implementasi |
+|---|---|---|---|---|
+| **Prescan Wilayah** | Spatial Bounding Box | $\mathcal{O}(\log N + K)$ | $\mathcal{O}(K)$ | Mengeliminasi $90\%$ faskes di luar radius $\pm 0.15^\circ$ sebelum perhitungan bola bumi. |
+| **Kalkulasi Jarak** | Haversine Formula | $\mathcal{O}(K)$ | $\mathcal{O}(1)$ | Menggunakan radius bumi $R = 6371\text{ km}$ dengan akurasi hingga level meter. |
+| **Pengurutan Faskes**| Dual-Pivot Quicksort | $\mathcal{O}(K \log K)$ | $\mathcal{O}(\log K)$ | Mengurutkan faskes terdekat, rating tertinggi, atau alfabetis. |
+| **Rute Tercepat** | Dijkstra (Min-Heap) | $\mathcal{O}((V + E) \log V)$ | $\mathcal{O}(V)$ | Mengutamakan jalan berkecepatan tinggi & menghindari titik kemacetan padat. |
+| **Rute Terpendek** | A* Heuristic Search | $\mathcal{O}(b^d) \sim \mathcal{O}(E)$ | $\mathcal{O}(V)$ | Menggunakan fungsi heuristik jarak Euclidean terarah menuju faskes tujuan. |
+
+### Visualisasi Jalur Lalu Lintas Multi-Warna:
+* 🔵 **Garis Biru (`#2563eb`)**: **Jalan Lancar** (arus stabil ~45 km/jam).
+* 🟡 **Garis Kuning (`#eab308`)**: **Ramai Lancar** (arus padat sedang ~25 km/jam).
+* 🔴 **Garis Merah (`#ef4444`)**: **Macet / Padat** (titik persimpangan atau mendekati IGD faskes ~10 km/jam).
+* **Interactive Live Legend**: Terpasang di pojok kanan bawah peta Leaflet (`🔵 Lancar • 🟡 Ramai Lancar • 🔴 Macet`).
+
+---
+
+## 💬 3. Chatbot Visibility Guard & RLHF Review Pipeline
+
+Sistem chatbot Zavora Life menerapkan pembatasan tampilan berbasis peran pengguna (*Role-Based Visibility*) dan siklus peninjauan umpan balik model (*RLHF Feedback Queue*):
+
+```mermaid
+stateDiagram-v2
+    [*] --> CheckRole: Pengguna Mengakses Halaman
+
+    state CheckRole {
+        GUEST --> ShowChatbot: Beranda / Landing Page Publik
+        PATIENT --> ShowChatbot: Seluruh Portal Pasien (Dashboard, Faskes, Janji Temu)
+        DOCTOR --> HideChatbot: Sembunyikan dari Portal Konsultasi Dokter
+        ADMIN --> HideChatbot: Sembunyikan dari Dashboard Audit Admin
+    }
+
+    state ChatbotInteraction {
+        ShowChatbot --> AskQuestion: Pasien Mengirim Pesan Medis
+        AskQuestion --> AIResponse: OpenRouter / DeepSeek RAG Stream
+        AIResponse --> FeedbackState: Tampilkan Tombol LIKE / UNLIKE
+    }
+
+    state RLHFReviewQueue {
+        FeedbackState --> Unreviewed: UNREVIEWED (Default)
+        FeedbackState --> Clicked: Pasien Mengklik LIKE / UNLIKE
+        Clicked --> AnimateHeart: Animasi Feedback (300ms)
+        AnimateHeart --> StoredDB: Tersimpan di PostgreSQL (ChatFeedback)
+        StoredDB --> PendingReview: Status PENDING
+        PendingReview --> RetrainingDataset: TRAINING_ELIGIBLE (Disetujui Auditor Klinis)
+        PendingReview --> ExcludedDataset: TRAINING_EXCLUDED (Tidak Lolos Standar Medis)
+    }
+```
+
+---
+
+## 📂 4. Dataset Directory Architecture
 
 ```text
 SEHAT-KUAT/
-├── apps/
-│   ├── api/                       # NestJS API Backend (:4000)
-│   │   ├── src/
-│   │   │   ├── auth/              # Argon2id Authentication & RBAC
-│   │   │   ├── users/             # User Management & Geolocation Sync
-│   │   │   ├── patients/          # Patient Profiles & Medical Data
-│   │   │   ├── doctors/           # Doctor Directory & Schedules
-│   │   │   ├── clinics/           # Clinic Branches
-│   │   │   ├── appointments/      # Atomic Booking & Scheduling
-│   │   │   ├── queues/            # Live Queue & SSE Streams
-│   │   │   ├── consultations/     # EMR & Clinical Teleconsultation
-│   │   │   ├── medical-records/   # ICD-10 Diagnoses & Records
-│   │   │   ├── prescriptions/     # Digital E-Prescriptions
-│   │   │   ├── payments/          # Payment Reconciliations
-│   │   │   ├── notifications/     # Notification System
-│   │   │   ├── webhooks/          # Secure Webhooks Gateway
-│   │   │   ├── common/            # Interceptors, Filters & Events
-│   │   │   └── ai/                # AI Consultation & Telemetry
-│   │   └── package.json
-│   └── web/                       # Next.js 16 PWA Frontend (:3000)
-│       ├── src/
-│       │   ├── app/               # App Router Pages (/doctors, /chat, /doctor/consultations/[id], etc.)
-│       │   ├── hooks/             # SSE Streaming Hooks (useQueueStream, useNotificationStream)
-│       │   ├── lib/api/           # Centralized API SDK Client
-│       │   └── stores/            # Zustand State Stores
-│       └── package.json
-├── prisma/
-│   ├── schema.prisma              # 27 Normalized PostgreSQL Models
-│   └── seed.ts                    # Safe Development Seeding Script
-├── docker/
-│   └── nginx.conf                 # Nginx Load Balancer with SSE Buffering Disabled
-├── services/
-│   └── ai/                        # FastAPI AI Service
-├── docker-compose.yml             # Full-Stack Orchestration
-└── .env.example                   # Environment Template
+├── datasets/
+│   └── facilities/
+│       └── faskes_master_indonesia.csv      # Dataset Master Rumah Sakit, Puskesmas, Apotek 24J & Lab
+├── ai-service/
+│   └── datasets/
+│       ├── chatbot/                         # Kumpulan percakapan triase medis
+│       ├── medical_analysis/                # Skrining laboratorium & analisis radiologi
+│       ├── feedback_rlhf/
+│       │   └── ai_feedback_training_sample.csv # Dataset feedback LIKE/UNLIKE untuk fine-tuning model
+│       └── rag_kb/
+│           └── medical_rag_kb.csv           # Pedoman klinis ICD-10, triase darurat & pedoman PERKI/IDAI
 ```
 
 ---
 
-## 🚀 Step-by-Step Running Guide
+## 🔐 5. Security & Authentication Methods
 
-### 1. Inisialisasi Lingkungan (.env)
-Pastikan file `.env` di root terkonfigurasi dengan URL database Neon PostgreSQL:
-```bash
-cp .env.example .env
-```
+### 1. Password Hashing (Argon2id)
+* **Algoritma**: `Argon2id` (v=19)
+* **Parameter**: `timeCost: 3`, `memoryCost: 65536 KB (64 MB)`, `parallelism: 4`
+* **Proteksi**: Kebal terhadap serangan ASIC/GPU cracking dan side-channel attacks.
 
-### 2. Sinkronisasi Database Neon & Seeding Data
-Jalankan perintah berikut langsung dari root direktori:
+### 2. Session & Auth Architecture
+* **Tokens**: JWT bertanda tangan HMAC-SHA256.
+* **Transport**: Disimpan dalam `HttpOnly`, `SameSite=Strict`, `Secure` cookies.
+* **Role Registration Policy**: Form pendaftaran publik (`/register`) khusus untuk **PATIENT**. Akun **DOCTOR** dan **ADMIN** dibuat secara internal oleh sistem.
+
+### 3. Concurrency-Safe Queue & Atomic Booking
+* **Transaction Engine**: Dijalankan di dalam `prisma.$transaction`.
+* **Locking Strategy**: Mengisolasi evaluasi jadwal dan nomor antrean berurutan (`MAX(queueNumber) + 1`) per dokter per hari untuk mencegah *race condition* dan *double-booking*.
+
+---
+
+## 🚀 Panduan Menjalankan Aplikasi
+
+### 1. Inisialisasi Database Neon PostgreSQL
 ```powershell
-# 1. Generate Prisma Client
+# Generate Prisma Client
 npm run prisma:generate
 
-# 2. Sinkronisasi Skema ke Neon PostgreSQL
+# Sinkronisasi Skema Database
 npm run prisma:push
 
-# 3. Masukkan Data Seed Contoh (Admin, Dokter, Pasien, Jadwal)
+# Masukkan Data Seed (Admin, Dokter, Pasien, Faskes)
 npm run prisma:seed
 ```
 
-### 3. Menjalankan Server Pengembangan (Development Mode)
-Buka 2 jendela terminal di folder root:
+### 2. Menjalankan Server Pengembangan
+```powershell
+# Terminal 1 - Backend NestJS API (:4000)
+npm run dev:api
 
-* **Terminal 1 — Backend NestJS API (`http://localhost:4000`):**
-  ```powershell
-  npm run dev:api
-  ```
+# Terminal 2 - Frontend Next.js PWA (:3000)
+npm run dev:web
+```
 
-* **Terminal 2 — Frontend Next.js PWA (`http://localhost:3000`):**
-  ```powershell
-  npm run dev:web
-  ```
-
-### 4. Build Production
-Untuk memvalidasi dan mengompilasi seluruh aplikasi:
+### 3. Menjalankan Build Produksi
 ```powershell
 npm run build
 ```
-
----
-
-## 🛠️ Troubleshooting & Port Management
-
-### Mengatasi "Another next dev server is already running / Port 3000 is in use"
-Jika Next.js mendeteksi proses server lain yang sedang berjalan di port 3000/3001/3002:
-
-* **Matikan proses Next.js yang berjalan di background (Windows PowerShell):**
-  ```powershell
-  # Cari dan matikan proses node yang memegang port
-  Get-Process -Name node | Stop-Process -Force
-  ```
-  *Atau gunakan perintah Taskkill jika PID diketahui:*
-  ```powershell
-  taskkill /PID <PID_NUMBER> /F
-  ```
-* **Jalankan ulang frontend:**
-  ```powershell
-  npm run dev:web
-  ```
 
 ---
 
@@ -198,16 +242,15 @@ Jika Next.js mendeteksi proses server lain yang sedang berjalan di port 3000/300
 
 | Layer | Audit Check | Status | Verification Detail |
 |---|---|---|---|
-| **Auth** | Password Hashing | ✅ PASSED | Argon2id with 64MB memory cost |
-| **Auth** | Session Hijacking | ✅ PASSED | HttpOnly, Secure, SameSite=Strict cookies |
+| **Auth** | Password Hashing | ✅ PASSED | Argon2id dengan 64MB memory cost |
+| **Auth** | Session Security | ✅ PASSED | HttpOnly, Secure, SameSite=Strict cookies |
 | **Database** | SQL Injection | ✅ PASSED | Parameterized queries via Prisma ORM |
-| **Database** | Data Isolation | ✅ PASSED | Tenant role-based isolation on all medical records |
-| **API** | Error Masking | ✅ PASSED | Global HttpExceptionFilter hides raw database traces |
-| **API** | Input Validation | ✅ PASSED | Strict DTO validation with class-validator |
-| **Realtime** | SSE Buffering | ✅ PASSED | Nginx `proxy_buffering off` configured for event streams |
-| **Frontend** | Type Safety | ✅ PASSED | 0 TypeScript errors across NestJS and Next.js builds |
+| **Insurance** | Autra-AI Pre-Auth | ✅ PASSED | Real-time policy limit & ICD-10 validation |
+| **Facilities** | Computational Geometry | ✅ PASSED | Spatial prescan O(log N + K) & Dijkstra traffic routing |
+| **Frontend** | Type Safety | ✅ PASSED | 0 TypeScript errors across NestJS & Next.js builds |
+| **Export** | PDF Claim Generator | ✅ PASSED | A4 print stylesheet dengan QR & cap digital resmi |
 
 ---
 
-## 📄 License
-UNLICENSED — Proprietary & Confidential to **KlinikSehat Team**.
+## 📄 Lisensi
+Hak Cipta © 2026 **Zavora Life Engineering Team**. All rights reserved.
