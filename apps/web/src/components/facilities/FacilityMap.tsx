@@ -5,6 +5,14 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { HealthcareFacility, RouteAlgorithm } from "@/stores/facilitiesStore";
 
+// Fix default leaflet icons in Next.js SSR/Webpack bundling
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
 interface FacilityMapProps {
   facilities: HealthcareFacility[];
   selectedFacility: HealthcareFacility | null;
@@ -13,7 +21,7 @@ interface FacilityMapProps {
   onSelectFacility: (facility: HealthcareFacility) => void;
   onRecenter: () => void;
   sortBy: string;
-  onSortChange: (sort: 'DISTANCE' | 'RATING' | 'NAME') => void;
+  onSortChange: (sort: "DISTANCE" | "RATING" | "NAME") => void;
 }
 
 export default function FacilityMap({
@@ -32,9 +40,7 @@ export default function FacilityMap({
   const routeLayerRef = useRef<L.Polyline | null>(null);
   const routeBadgeRef = useRef<L.Marker | null>(null);
 
-  const geoapifyKey = "0e6b74008bb54855ad22db81f7d1d84f";
-
-  // Initialize Map
+  // 1. Initialize Leaflet Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -45,41 +51,62 @@ export default function FacilityMap({
         zoomControl: false,
       });
 
-      // Geoapify Bright Tile Layer with standard OSM fallback
-      const geoapifyLayer = L.tileLayer(
-        `https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=${geoapifyKey}`,
-        {
-          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Geoapify',
-          maxZoom: 19,
-        }
-      );
+      // High-reliability OpenStreetMap tile layer (instant global load)
+      const osmTileLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+        subdomains: ["a", "b", "c"],
+      });
+      osmTileLayer.addTo(map);
 
-      geoapifyLayer.addTo(map);
-
-      // Custom zoom control in bottom right
+      // Custom zoom control in bottom-right
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
       mapInstanceRef.current = map;
       markersLayerRef.current = L.layerGroup().addTo(map);
-    }
 
-    return () => {
-      // Map cleanup on unmount
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
+      // Trigger invalidateSize after slight delay to ensure container dimensions are computed
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 200);
+
+      // Resize observer to handle dynamic responsive layout changes
+      const resizeObserver = new ResizeObserver(() => {
+        map.invalidateSize();
+      });
+      resizeObserver.observe(mapContainerRef.current);
+
+      return () => {
+        resizeObserver.disconnect();
+        map.remove();
         mapInstanceRef.current = null;
-      }
-    };
+      };
+    }
   }, []);
 
-  // Update Markers & User Location Pin
+  // 2. React to GPS location changes (e.g. when user clicks "Izinkan Lokasi")
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !userLocation?.latitude || !userLocation?.longitude) return;
+
+    map.flyTo([userLocation.latitude, userLocation.longitude], 14, {
+      duration: 1.0,
+      easeLinearity: 0.25,
+    });
+
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+  }, [userLocation.latitude, userLocation.longitude]);
+
+  // 3. Update Markers & User Location Pin
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !markersLayerRef.current) return;
 
     markersLayerRef.current.clearLayers();
 
-    // 1. User Location Marker (Pulse Dot)
+    // User Location Marker (Pulse Dot)
     const userIcon = L.divIcon({
       className: "custom-user-marker",
       html: `
@@ -104,11 +131,10 @@ export default function FacilityMap({
       { permanent: false, direction: "top" }
     );
 
-    // 2. Healthcare Facility Markers
+    // Healthcare Facility Markers
     facilities.forEach((fac, idx) => {
       const isSelected = selectedFacility?.id === fac.id;
 
-      // Color mapping
       let pinColor = "bg-emerald-600";
       if (fac.type === "HOSPITAL") pinColor = "bg-rose-600";
       if (fac.type === "PHARMACY") pinColor = "bg-teal-600";
@@ -116,9 +142,13 @@ export default function FacilityMap({
       if (fac.type === "PUSKESMAS") pinColor = "bg-blue-600";
 
       const iconHtml = `
-        <div class="cursor-pointer group select-none transition-transform ${isSelected ? "scale-110 z-50" : "hover:scale-105"}">
+        <div class="cursor-pointer group select-none transition-transform ${
+          isSelected ? "scale-110 z-50" : "hover:scale-105"
+        }">
           <div class="flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-slate-900 border ${
-            isSelected ? "border-emerald-600 shadow-md ring-2 ring-emerald-500/40" : "border-slate-200 dark:border-slate-700 shadow-xs"
+            isSelected
+              ? "border-emerald-600 shadow-md ring-2 ring-emerald-500/40"
+              : "border-slate-200 dark:border-slate-700 shadow-xs"
           } rounded-xl text-[10px] font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
             <div class="w-4 h-4 rounded-md ${pinColor} text-white flex items-center justify-center text-[9px] font-black">
               ${idx + 1}
@@ -149,7 +179,7 @@ export default function FacilityMap({
     });
   }, [facilities, selectedFacility, userLocation]);
 
-  // Update Route Polyline & Info Badge
+  // 4. Update Route Polyline & Info Badge (Without exposing algorithm names to users)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -165,7 +195,6 @@ export default function FacilityMap({
 
     if (!selectedFacility) return;
 
-    // Fetch route from API backend or compute realistic road path
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
     const routeUrl = `${apiUrl}/facilities/route?originLat=${userLocation.latitude}&originLng=${userLocation.longitude}&destLat=${selectedFacility.latitude}&destLng=${selectedFacility.longitude}&mode=${routeAlgorithm}`;
 
@@ -180,27 +209,26 @@ export default function FacilityMap({
                 [selectedFacility.latitude, selectedFacility.longitude],
               ];
 
-        // Polyline styling
-        const isAStar = routeAlgorithm === "A_STAR";
+        const isShortest = routeAlgorithm === "A_STAR";
         const polyline = L.polyline(coords, {
-          color: isAStar ? "#059669" : "#0284c7",
+          color: isShortest ? "#059669" : "#0284c7",
           weight: 5,
           opacity: 0.9,
           lineJoin: "round",
-          dashArray: isAStar ? undefined : "6, 8",
+          dashArray: isShortest ? undefined : "6, 8",
         }).addTo(map);
 
         routeLayerRef.current = polyline;
 
-        // Place a floating badge at midpoint of route
         const midIndex = Math.floor(coords.length / 2);
         const midPoint = coords[midIndex] || [
           (userLocation.latitude + selectedFacility.latitude) / 2,
           (userLocation.longitude + selectedFacility.longitude) / 2,
         ];
 
+        // Clean user-friendly label without internal algorithm names
         const badgeText = `${
-          isAStar ? "Rute Terpendek" : "Rute Tercepat (Dijkstra)"
+          isShortest ? "Rute Terpendek" : "Rute Tercepat"
         } • ${selectedFacility.distanceKm ?? 2.4} km • ${
           selectedFacility.estimatedMinutes ?? 9
         } menit`;
@@ -209,7 +237,7 @@ export default function FacilityMap({
           className: "route-badge",
           html: `
             <div class="px-3 py-1.5 rounded-full ${
-              isAStar ? "bg-emerald-700" : "bg-sky-700"
+              isShortest ? "bg-emerald-700" : "bg-sky-700"
             } text-white text-[10px] font-bold shadow-md whitespace-nowrap border border-white/40 animate-in fade-in zoom-in duration-200">
               ${badgeText}
             </div>
@@ -221,7 +249,6 @@ export default function FacilityMap({
         const badgeMarker = L.marker(midPoint, { icon: badgeIcon }).addTo(map);
         routeBadgeRef.current = badgeMarker;
 
-        // Pan to fit bounds
         map.fitBounds(polyline.getBounds(), { padding: [60, 60], maxZoom: 16 });
       })
       .catch((e) => {
@@ -230,11 +257,11 @@ export default function FacilityMap({
   }, [selectedFacility, routeAlgorithm, userLocation]);
 
   return (
-    <div className="relative w-full h-full min-h-[380px] lg:min-h-[520px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xs">
+    <div className="relative w-full h-[420px] lg:h-[540px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xs bg-slate-100 dark:bg-slate-800">
       {/* Map Leaflet Container */}
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-      {/* Floating Map Controls (Top Right): Sort Dropdown & Layer Indicator */}
+      {/* Floating Sort Dropdown (Top Right) */}
       <div className="absolute top-4 right-4 z-400 flex items-center gap-2">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-1.5 shadow-sm flex items-center gap-1.5 text-xs">
           <span className="text-[10px] font-semibold text-slate-500 pl-1">Urutkan:</span>

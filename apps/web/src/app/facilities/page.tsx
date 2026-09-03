@@ -187,11 +187,8 @@ export default function FacilitiesPage() {
           </h1>
         </div>
 
-        {/* Algorithm Mode Toggle */}
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 self-start sm:self-auto shadow-2xs">
-          <span className="text-[10px] font-semibold text-slate-500 pl-1.5 hidden md:inline">
-            Mode Pencarian:
-          </span>
+        {/* Navigation Mode Toggle (Clean and patient-friendly) */}
+        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 self-start sm:self-auto shadow-2xs">
           <button
             onClick={() => setRouteAlgorithm("A_STAR")}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
@@ -201,7 +198,7 @@ export default function FacilitiesPage() {
             }`}
           >
             <RouteIcon className="w-3.5 h-3.5" />
-            <span>Rute Terpendek (A*)</span>
+            <span>Rute Terpendek</span>
           </button>
           <button
             onClick={() => setRouteAlgorithm("DIJKSTRA")}
@@ -212,13 +209,7 @@ export default function FacilitiesPage() {
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>Rute Tercepat (Dijkstra)</span>
-          </button>
-          <button
-            title="Info Algoritma: A* mengoptimalkan jarak geografis, sedangkan Dijkstra memperhitungkan beban lalu lintas."
-            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg transition"
-          >
-            <Info className="w-4 h-4" />
+            <span>Rute Tercepat</span>
           </button>
         </div>
       </div>
@@ -631,53 +622,53 @@ export default function FacilitiesPage() {
             </div>
           </div>
 
-          {/* 4. Bottom Algorithm Explainer Cards (From Screenshot) */}
+          {/* 4. Patient Support & Care Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2">
-            {/* A* Card */}
+            {/* Emergency Service */}
             <div className="p-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2">
               <div className="flex items-center gap-2">
-                <RouteIcon className="w-5 h-5 text-emerald-600" />
+                <ShieldAlert className="w-5 h-5 text-rose-600" />
                 <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                  Metode A* (Rute Terpendek)
+                  Layanan Darurat 24 Jam
                 </h4>
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                Algoritma A* menghitung rute dengan mempertimbangkan jarak aktual dan estimasi ke tujuan. Memberikan rute paling efisien berdasarkan jarak terpendek.
+                Fasilitas berstatus IGD siap melayani penanganan kegawatdaruratan medis dan ambulans siaga 24 jam.
               </p>
-              <span className="inline-block px-2.5 py-0.5 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 rounded-full text-[9px] font-bold">
-                Rekomendasi Default
+              <span className="inline-block px-2.5 py-0.5 bg-rose-50 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 rounded-full text-[9px] font-bold">
+                IGD Siaga
               </span>
             </div>
 
-            {/* Dijkstra Card */}
+            {/* Travel Time Estimation */}
             <div className="p-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2">
               <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-sky-600" />
+                <Clock className="w-5 h-5 text-emerald-600" />
                 <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                  Metode Dijkstra (Rute Tercepat)
+                  Estimasi Perjalanan Presisi
                 </h4>
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                Algoritma Dijkstra menghitung rute berdasarkan waktu tempuh aktual di jalan. Mempertimbangkan kondisi lalu lintas dan batas kecepatan.
+                Waktu tempuh dan jarak dihitung secara akurat dari titik GPS Anda untuk efisiensi mobilitas perawatan.
               </p>
-              <span className="inline-block px-2.5 py-0.5 bg-sky-100 dark:bg-sky-950/80 text-sky-800 dark:text-sky-300 rounded-full text-[9px] font-bold">
-                Terbaik untuk Lalu Lintas
+              <span className="inline-block px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 rounded-full text-[9px] font-bold">
+                Rute Cepat
               </span>
             </div>
 
-            {/* Info Routing Card */}
+            {/* Pharmacy & Prescriptions */}
             <div className="p-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2">
               <div className="flex items-center gap-2">
-                <Info className="w-5 h-5 text-emerald-600" />
+                <Pill className="w-5 h-5 text-teal-600" />
                 <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                  Perhitungan Rute
+                  Apotek & Tebus Obat
                 </h4>
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                Data rute menggunakan OpenStreetMap & Geoapify API. Diperbarui setiap 5 menit berdasarkan kondisi jalan dan jarak tempuh presisi.
+                Tersedia faskes apotek rekanan terdekat dengan persediaan obat resep lengkap dan konsultasi apoteker.
               </p>
-              <span className="inline-block px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full text-[9px] font-bold">
-                Navigasi Aktif
+              <span className="inline-block px-2.5 py-0.5 bg-teal-50 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 rounded-full text-[9px] font-bold">
+                Obat Resmi
               </span>
             </div>
           </div>
